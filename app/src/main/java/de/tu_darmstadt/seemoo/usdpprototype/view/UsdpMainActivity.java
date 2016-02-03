@@ -45,7 +45,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBro
 public class UsdpMainActivity extends AppCompatActivity {
 
     private final String LOGTAG = "UsdpMainActivity";
-    boolean mBound;
+
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
@@ -58,20 +58,21 @@ public class UsdpMainActivity extends AppCompatActivity {
     private WiFiDirectBroadcastReceiver mReceiver;
     private WifiP2pManager.Channel mChannel;
     private IntentFilter mIntentFilter;
+
+    // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
+    private boolean mBound;
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
-    /**
-     * Target we publish for clients to send messages to IncomingHandler.
-     */
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
 
+    // handles messages from UsdpService
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsdpService.MSG_SAY_HELLO:
-                    Toast.makeText(UsdpMainActivity.this, "service said hello!!!!!!!!!!!!!!!!!!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(UsdpMainActivity.this, "service said hello!", Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     super.handleMessage(msg);
@@ -182,8 +183,7 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        valueList.add("Device 1");
-        valueList.add("Device 2");
+        valueList.add("Discovered devices");
 
 
         deviceNames = valueList.toArray(new String[0]);
