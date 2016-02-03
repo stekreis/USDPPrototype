@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype;
+package de.tu_darmstadt.seemoo.usdpprototype.primarychannel;
 
 /**
  * Created by kenny on 26.01.16.

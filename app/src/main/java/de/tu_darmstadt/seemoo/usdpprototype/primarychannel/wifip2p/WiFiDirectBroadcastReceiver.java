@@ -1,12 +1,13 @@
-package de.tu_darmstadt.seemoo.usdpprototype;
+package de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
+
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 26.01.16.

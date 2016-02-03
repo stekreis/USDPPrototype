@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype;
+package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 import android.content.Context;
 import android.view.LayoutInflater;

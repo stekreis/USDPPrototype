@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype;
+package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -37,6 +37,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+
+import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBroadcastReceiver;
 
 public class UsdpMainActivity extends AppCompatActivity {
 
@@ -174,22 +178,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                         unbindService(mConnection);
                         mBound = false;
                     }
-/*                    Context context = getApplicationContext();
-                    // use this to start and trigger a service
-                    Intent i = new Intent(context, UsdpService.class);
-                    // potentially add data to the intent
-                    i.putExtra("KEY1", "Value to be used by the service");
-
-                    context.startService(i);
-                } else {
-                    Context context = getApplicationContext();
-                    // use this to stop and trigger a service
-                    Intent i = new Intent(context, UsdpService.class);
-                    // potentially add data to the intent
-                    i.putExtra("KEY1", "Value to be used by the service");
-                    Log.d(LOGTAG, "stopservice");
-                    context.stopService(i);
- */
                 }
             }
         });
