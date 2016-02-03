@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">USDPPrototype</string>
+    <string name="service_name">USDPService</string>
+    <string name="action_settings">Settings</string>
+</resources>
