@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -120,14 +121,27 @@ public class UsdpMainActivity extends AppCompatActivity {
         btn_discover.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Message msg = Message.obtain(null, UsdpService.MSG_DISCOVERPEERS, 0, 0);
-                try {
-                    mService.send(msg);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+                if (mBound) {
+                    Message msg = Message.obtain(null, UsdpService.MSG_DISCOVERPEERS, 0, 0);
+                    try {
+                        mService.send(msg);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(UsdpMainActivity.this, "start Service first", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
+        Button btn_pair = (Button) findViewById(R.id.btn_pair);
+        btn_pair.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR));
+            }
+        });
+
 
         btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
         Intent in = new Intent(this, UsdpService.class);
@@ -176,6 +190,9 @@ public class UsdpMainActivity extends AppCompatActivity {
         lv_discoveredDevices.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                String deviceMac = lv_discoveredDevices.getAdapter().getItem(position).toString();
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR, deviceMac));
+
 /*
                 wifiP2pManager.requestGroupInfo(mChannel, new WifiP2pManager.GroupInfoListener() {
                     @Override
@@ -288,6 +305,10 @@ public class UsdpMainActivity extends AppCompatActivity {
         bindServiceIntent = new Intent(this, UsdpService.class);
     }
 
+    public interface MessageTarget {
+        public Handler getHandler();
+    }
+
     // handles messages from UsdpService
     class IncomingHandler extends Handler {
         @Override
@@ -307,5 +328,4 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         }
     }
-
 }

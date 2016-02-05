@@ -15,7 +15,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="discover now"
+        android:text="@string/btn_discover"
         android:id="@+id/btn_discover"
         android:layout_below="@+id/btn_toggleSvc"
         android:layout_alignParentLeft="true"
@@ -35,6 +35,14 @@
         android:text="New ToggleButton"
         android:id="@+id/btn_toggleSvc"
         android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_pair"
+        android:id="@+id/btn_pair"
+        android:layout_below="@+id/lv_discoveredDev"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 </RelativeLayout>

@@ -4,16 +4,24 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 //wifip2p
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ChatManager;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.GroupOwnerSocketHandler;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocket;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WfP2pServerSocket;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBroadcastReceiver;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -21,15 +29,16 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  * Created by kenny on 29.01.16.
  */
-public class UsdpService extends Service {
+public class UsdpService extends Service implements WifiP2pManager.ConnectionInfoListener, UsdpMainActivity.MessageTarget, Handler.Callback {
 
-
+    public static final int SERVER_PORT = 4545;
     /**
      * Command to the service to display a message
      */
@@ -56,19 +65,25 @@ public class UsdpService extends Service {
     public static final int MSG_DISCOVERPEERS = 5;
     public static final int MSG_PEERSDISCOVERED = 6;
     public static final int MSG_CONNECT = 7;
+    public static final int MSG_PAIR = 8;
+    public static final int CHAT_MY_HANDLE = 9;
+    public static final int CHAT_MESSAGE_READ = 10;
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
     final Messenger mMessenger = new Messenger(new IncomingHandler());
+    ServerSocket serverSocket;
     //WifiP2p fields
     private WiFiDirectBroadcastReceiver mReceiver;
     private HashMap<String, WifiP2pDevice> discoveredDevicesComplete = new HashMap<String, WifiP2pDevice>();
     private WifiP2pManager wifiP2pManager;
     private WifiP2pManager.Channel mChannel;
     private IntentFilter mIntentFilter;
-    private Handler handler;
+    private Handler handler = new Handler(this);
     private Messenger activityMessenger;
     private String LOGTAG = "UsdpService";
+
+    private ChatManager chatManager;
 
     /**
      * When binding to the service, we return an interface to our messenger
@@ -112,7 +127,7 @@ public class UsdpService extends Service {
         Toast.makeText(this, "My Service Created", Toast.LENGTH_LONG).show(); //is shown
 
 
-        // logic
+        // wifip2p logic
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
         mReceiver = new WiFiDirectBroadcastReceiver(wifiP2pManager, mChannel, this);
@@ -123,7 +138,6 @@ public class UsdpService extends Service {
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
-        // TODO register was in 'onResume' of Activity. No such method in Service, is it OK in onCreate?
         registerReceiver(mReceiver, mIntentFilter);
     }
 
@@ -153,10 +167,6 @@ public class UsdpService extends Service {
 
     }
 
-    public void someoneConnects() {
-        Log.d(LOGTAG, "someone connects");
-    }
-
     private void sendMsgToActivity(Message msg) {
         try {
             activityMessenger.send(msg);
@@ -164,6 +174,67 @@ public class UsdpService extends Service {
             e.printStackTrace();
         }
     }
+
+
+    public Handler getHandler() {
+        return handler;
+    }
+
+    @Override
+    public void onConnectionInfoAvailable(WifiP2pInfo p2pInfo) {
+        Thread handler = null;
+        /*
+         * The group owner accepts connections using a server socket and then spawns a
+         * client socket for every client. This is handled by {@code
+         * GroupOwnerSocketHandler}
+         */
+
+        if (p2pInfo.isGroupOwner) {
+            Log.d(LOGTAG, "Connected as group owner");
+            try {
+                handler = new GroupOwnerSocketHandler(
+                        ((UsdpMainActivity.MessageTarget) this).getHandler());
+                handler.start();
+            } catch (IOException e) {
+                Log.d(LOGTAG,
+                        "Failed to create a server thread - " + e.getMessage());
+                return;
+            }
+        } else {
+            Log.d(LOGTAG, "Connected as peer");
+            handler = new ClientSocketHandler(
+                    ((UsdpMainActivity.MessageTarget) this).getHandler(),
+                    p2pInfo.groupOwnerAddress);
+            handler.start();
+        }
+
+        // TODO inform Activity and provide message input
+        /*chatFragment = new WiFiChatFragment();
+        getFragmentManager().beginTransaction()
+                .replace(R.id.container_root, chatFragment).commit();
+        statusTxtView.setVisibility(View.GONE);*/
+    }
+
+    @Override
+    public boolean handleMessage(Message msg) {
+        switch (msg.what) {
+            case CHAT_MESSAGE_READ:
+                byte[] readBuf = (byte[]) msg.obj;
+                // construct a string from the valid bytes in the buffer
+                String readMessage = new String(readBuf, 0, msg.arg1);
+                Log.d(LOGTAG, readMessage + "testchatread");
+                //(chatFragment).pushMessage("Buddy: " + readMessage);
+                break;
+
+            case CHAT_MY_HANDLE:
+                Object obj = msg.obj;
+                Log.d(LOGTAG, "testchat");
+                setChatManager((ChatManager) obj);
+
+        }
+        return true;
+    }
+
 
     /**
      * Handler of incoming messages from clients.
@@ -221,10 +292,20 @@ public class UsdpService extends Service {
                             }
                         });
                     }
+                    break;
+                case MSG_PAIR:
+                    if (chatManager != null) {
+                        chatManager.write("teststring".getBytes());
+                        //pushMessage("Me: " + chatLine.getText().toString());
+                    }
+                    break;
                 default:
                     super.handleMessage(msg);
             }
         }
+    }
+    public void setChatManager(ChatManager obj) {
+        chatManager = obj;
     }
 
 }

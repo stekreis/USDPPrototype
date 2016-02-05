@@ -2,4 +2,6 @@
     <string name="app_name">USDPPrototype</string>
     <string name="service_name">USDPService</string>
     <string name="action_settings">Settings</string>
+    <string name="btn_discover">Discover devices</string>
+    <string name="btn_pair">Pair secure</string>
 </resources>
