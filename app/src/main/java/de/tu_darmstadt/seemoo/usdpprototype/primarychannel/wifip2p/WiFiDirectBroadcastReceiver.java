@@ -7,6 +7,7 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
+import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -18,16 +19,16 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
 
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
-    private UsdpMainActivity mActivity;
+    private UsdpService mService;
 
     private WifiP2pManager.PeerListListener mPeerListListener;
 
     public WiFiDirectBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel,
-                                       UsdpMainActivity activity) {
+                                       UsdpService service) {
         super();
         this.mManager = manager;
         this.mChannel = channel;
-        this.mActivity = activity;
+        this.mService = service;
        // init();
     }
 
@@ -35,7 +36,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
         mPeerListListener = new WifiP2pManager.PeerListListener() {
             @Override
             public void onPeersAvailable(WifiP2pDeviceList peers) {
-                mActivity.peersAvailable(peers);
+                mService.peersAvailable(peers);
                 Log.d(LOGTAG, "peersAvlbl");
             }
         };
@@ -65,13 +66,13 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
                 mManager.requestPeers(mChannel, new WifiP2pManager.PeerListListener() {
                     @Override
                     public void onPeersAvailable(WifiP2pDeviceList peers) {
-                        mActivity.peersAvailable(peers);
+                        mService.peersAvailable(peers);
                         Log.d(LOGTAG, "peersAvlbl");
                     }
                 });
             }
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-            mActivity.someoneConnects();
+            mService.someoneConnects();
 
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
