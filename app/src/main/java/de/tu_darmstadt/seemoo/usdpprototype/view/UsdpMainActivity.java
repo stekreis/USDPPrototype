@@ -4,7 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -53,6 +52,7 @@ public class UsdpMainActivity extends AppCompatActivity {
      * Class for interacting with the main interface of the service.
      */
     private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // This is called when the connection with the service has been
             // established, giving us the object we can use to
@@ -88,6 +88,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
         }
 
+        @Override
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
@@ -104,6 +105,11 @@ public class UsdpMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
+
+        initViewComponents();
+    }
+
+    private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -230,10 +236,13 @@ public class UsdpMainActivity extends AppCompatActivity {
                 return true;
             }
         });
-
-
     }
 
+    /**
+     * Send a prepared message to the service, takes care of error handling
+     *
+     * @param msg
+     */
     private void sendMsgtoService(Message msg) {
         try {
             mService.send(msg);
@@ -253,16 +262,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
-
-    /*
-        private void addDeviceNames() {
-            ListIterator<String> item = valueList.listIterator();
-            while (item.hasNext()) {
-                String dev = item.next();
-                item.set(discoveredDevicesComplete.get(dev).deviceName + " (" + dev + ")");
-            }
-        }
-    */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -285,18 +284,14 @@ public class UsdpMainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /* register the broadcast receiver with the intent values to be matched */
     @Override
     protected void onResume() {
         super.onResume();
-
     }
 
-    /* unregister the broadcast receiver */
     @Override
     protected void onPause() {
         super.onPause();
-
     }
 
     @Override
@@ -305,11 +300,14 @@ public class UsdpMainActivity extends AppCompatActivity {
         bindServiceIntent = new Intent(this, UsdpService.class);
     }
 
+    // TODO move to its own file?
     public interface MessageTarget {
         public Handler getHandler();
     }
 
-    // handles messages from UsdpService
+    /**
+     * inner class, handles messages from @UsdpService
+     */
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
@@ -322,6 +320,9 @@ public class UsdpMainActivity extends AppCompatActivity {
                     valueList.addAll((List<String>) msg.obj);
                     //addDeviceNames();
                     la_discoveredDevices.notifyDataSetChanged();
+                    break;
+                case UsdpService.MSG_CHATMSGRECEIVED:
+                    Toast.makeText(UsdpMainActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     super.handleMessage(msg);

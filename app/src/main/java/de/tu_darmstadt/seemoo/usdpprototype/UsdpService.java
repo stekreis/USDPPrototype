@@ -68,6 +68,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_PAIR = 8;
     public static final int CHAT_MY_HANDLE = 9;
     public static final int CHAT_MESSAGE_READ = 10;
+    public static final int MSG_CHATMSGRECEIVED = 11;
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
@@ -145,26 +146,17 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         WifiP2pDevice device = null;
         Log.d(LOGTAG, "list incoming");
 
-
         for (WifiP2pDevice peer : peers.getDeviceList()) {
             device = peer;
-
             String deviceaddr = device.deviceAddress;
-
-
             discoveredDevicesComplete.put(deviceaddr, device);
-
-
             Log.d(LOGTAG, deviceaddr + " found");
-
         }
         if (activityMessenger != null) {
             ArrayList<String> deviceMacs = new ArrayList<String>(discoveredDevicesComplete.keySet());
             sendMsgToActivity(Message.obtain(null,
                     MSG_PEERSDISCOVERED, deviceMacs));
         }
-
-
     }
 
     private void sendMsgToActivity(Message msg) {
@@ -222,7 +214,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 byte[] readBuf = (byte[]) msg.obj;
                 // construct a string from the valid bytes in the buffer
                 String readMessage = new String(readBuf, 0, msg.arg1);
-                Log.d(LOGTAG, readMessage + "testchatread");
+                Log.d(LOGTAG, readMessage);
+                sendMsgToActivity(Message.obtain(null, MSG_CHATMSGRECEIVED, readMessage));
                 //(chatFragment).pushMessage("Buddy: " + readMessage);
                 break;
 
@@ -235,9 +228,13 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         return true;
     }
 
+    public void setChatManager(ChatManager obj) {
+        chatManager = obj;
+    }
 
     /**
-     * Handler of incoming messages from clients.
+     * inner class, handles messages from @UsdpMainActivity
+     *
      */
     class IncomingHandler extends Handler {
         @Override
@@ -303,9 +300,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     super.handleMessage(msg);
             }
         }
-    }
-    public void setChatManager(ChatManager obj) {
-        chatManager = obj;
     }
 
 }
