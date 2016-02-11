@@ -13,47 +13,52 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 
 /**
  * Handles reading and writing of messages with socket buffers. Uses a Handler
- * to post messages to UI thread for UI updates.
+ * to post messages to Service.
  */
-public class ChatManager implements Runnable {
+public class MessageManager implements Runnable {
+
+    public static final byte MC_INITHANDLER = 1;
+    public static final byte MC_MSGRECEIVED = 2;
+
+    public static final byte MSGTYPE_PREAUTH = 1;
+    public static final byte MSGTYPE_INAUTH = 2;
+    public static final byte MSGTYPE_POSTAUTH = 3;
 
     private Socket socket = null;
     private Handler handler;
 
-    public ChatManager(Socket socket, Handler handler) {
+    public MessageManager(Socket socket, Handler handler) {
         this.socket = socket;
         this.handler = handler;
     }
 
-    private InputStream iStream;
-    private OutputStream oStream;
-    private static final String TAG = "ChatHandler";
+    private InputStream inStream;
+    private OutputStream outStream;
+    private static final String LOGTAG = "MessageManager";
 
     @Override
     public void run() {
         try {
-
-            iStream = socket.getInputStream();
-            oStream = socket.getOutputStream();
+            inStream = socket.getInputStream();
+            outStream = socket.getOutputStream();
             byte[] buffer = new byte[1024];
             int bytes;
-            handler.obtainMessage(UsdpService.CHAT_MY_HANDLE, this)
+            handler.obtainMessage(MC_INITHANDLER, this)
                     .sendToTarget();
-
             while (true) {
                 try {
-                    // Read from the InputStream
-                    bytes = iStream.read(buffer);
+                    // read from InputStream. 'bytes' represents size
+                    bytes = inStream.read(buffer);
                     if (bytes == -1) {
                         break;
                     }
 
-                    // Send the obtained bytes to the UI Activity
-                    Log.d(TAG, "Rec:" + String.valueOf(buffer));
-                    handler.obtainMessage(UsdpService.CHAT_MESSAGE_READ,
+                    // forward received bytes to the Service
+                    Log.d(LOGTAG, "received: " + String.valueOf(buffer));
+                    handler.obtainMessage(MC_MSGRECEIVED,
                             bytes, -1, buffer).sendToTarget();
                 } catch (IOException e) {
-                    Log.e(TAG, "disconnected", e);
+                    Log.e(LOGTAG, "disconnected", e);
                 }
             }
         } catch (IOException e) {
@@ -69,9 +74,9 @@ public class ChatManager implements Runnable {
 
     public void write(byte[] buffer) {
         try {
-            oStream.write(buffer);
+            outStream.write(buffer);
         } catch (IOException e) {
-            Log.e(TAG, "Exception during write", e);
+            Log.e(LOGTAG, "Exception during write", e);
         }
     }
 

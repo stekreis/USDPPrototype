@@ -1,0 +1,11 @@
+{
+  "devicetype": {
+    "name": "regularMobile",
+    "suppRecAuths": [
+      "VCI","VCN","VCP"
+    ],
+    "suppsendAuths":[
+
+    ]
+  }
+}

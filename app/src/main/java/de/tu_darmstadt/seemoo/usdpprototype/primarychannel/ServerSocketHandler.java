@@ -14,18 +14,18 @@ import java.util.concurrent.TimeUnit;
  * The implementation of a ServerSocket handler. This is used by the wifi p2p
  * group owner.
  */
-public class GroupOwnerSocketHandler extends Thread {
+public class ServerSocketHandler extends Thread {
 
-    ServerSocket socket = null;
+    private ServerSocket socket = null;
     private final int THREAD_COUNT = 10;
     private Handler handler;
-    private static final String TAG = "GroupOwnerSocketHandler";
+    private static final String TAG = "ServerSocketHandler";
 
-    public GroupOwnerSocketHandler(Handler handler) throws IOException {
+    public ServerSocketHandler(Handler handler) throws IOException {
         try {
             socket = new ServerSocket(4545);
             this.handler = handler;
-            Log.d("GroupOwnerSocketHandler", "Socket Started");
+            Log.d("ServerSocketHandler", "Socket Started");
         } catch (IOException e) {
             e.printStackTrace();
             pool.shutdownNow();
@@ -44,12 +44,10 @@ public class GroupOwnerSocketHandler extends Thread {
     @Override
     public void run() {
         while (true) {
-
-
             try {
-                // A blocking operation. Initiate a ChatManager instance when
+                // A blocking operation. Initiate a MessageManager instance when
                 // there is a new connection
-                pool.execute(new ChatManager(socket.accept(), handler));
+                pool.execute(new MessageManager(socket.accept(), handler));
                 Log.d(TAG, "Launching the I/O handler");
 
             } catch (IOException e) {

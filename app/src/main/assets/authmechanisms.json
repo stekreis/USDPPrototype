@@ -1,0 +1,7 @@
+{
+  "authmech": {
+    "name": "VCI",
+    "usedAuth": "MA-DH",
+    "secPoints": 8
+  }
+}

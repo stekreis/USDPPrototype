@@ -1,18 +1,20 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -29,6 +31,7 @@ import android.widget.ToggleButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
@@ -36,14 +39,13 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 public class UsdpMainActivity extends AppCompatActivity {
 
     private final String LOGTAG = "UsdpMainActivity";
-    private final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
+
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
     private ArrayList<String> valueList = new ArrayList<String>();
     private ToggleButton btn_toggleSvc;
-
-
     // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
@@ -105,7 +107,6 @@ public class UsdpMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
-
         initViewComponents();
     }
 
@@ -117,8 +118,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG));
             }
         });
 
@@ -199,40 +199,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                 String deviceMac = lv_discoveredDevices.getAdapter().getItem(position).toString();
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR, deviceMac));
 
-/*
-                wifiP2pManager.requestGroupInfo(mChannel, new WifiP2pManager.GroupInfoListener() {
-                    @Override
-                    public void onGroupInfoAvailable(WifiP2pGroup group) {
-                        Log.d(LOGTAG, group.getNetworkName() + "pass: " + group.getPassphrase());
-                    }
-                });
-
-                wifiP2pManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
-
-                    @Override
-                    public void onSuccess() {
-                        Log.d(LOGTAG, "Disconnected from device");
-                    }
-
-                    @Override
-                    public void onFailure(int reason) {
-                        Log.d(LOGTAG, "Couldn't disconnect from device");
-                    }
-                });
-                wifiP2pManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
-
-                    @Override
-                    public void onSuccess() {
-                        Log.d(LOGTAG, "Group removed");
-                    }
-
-                    @Override
-                    public void onFailure(int reason) {
-                        Log.d(LOGTAG, "Couldn't remove group");
-                    }
-                });
-*/
-
                 return true;
             }
         });
@@ -244,17 +210,6 @@ public class UsdpMainActivity extends AppCompatActivity {
      * @param msg
      */
     private void sendMsgtoService(Message msg) {
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void sayHello(View v) {
-        if (!mBound) return;
-        // Create and send a message to the service, using a supported 'what' value
-        Message msg = Message.obtain(null, UsdpService.MSG_SAY_HELLO, 0, 0);
         try {
             mService.send(msg);
         } catch (RemoteException e) {
@@ -308,7 +263,7 @@ public class UsdpMainActivity extends AppCompatActivity {
     /**
      * inner class, handles messages from @UsdpService
      */
-    class IncomingHandler extends Handler {
+    class InternalMsgIncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
