@@ -5,6 +5,8 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.os.Build;
 import android.os.Handler;
@@ -88,9 +90,12 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_PAIR = 8;
     public static final int MSG_CHATMSGRECEIVED = 11;
     public static final int MSG_SENDCHATMSG = 12;
-    private static final int AUTH_INITMSG = 13;
+    public static final int AUTH_INITMSG = 13;
+    public static final int AUTH_BARCODE = 14;
     final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     SecureAuthentication secureAuthentication = null;
+    //TTStest
+    TextToSpeech tts;
     //WifiP2p fields
     private WiFiDirectBroadcastReceiver mReceiver;
     private HashMap<String, WifiP2pDevice> discoveredDevices = new HashMap<String, WifiP2pDevice>();
@@ -100,12 +105,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private Handler handler = new Handler(this);
     private Messenger activityMessenger;
     private String LOGTAG = "UsdpService";
-
     private MessageManager messageManager;
-
-
-    //TTStest
-    TextToSpeech tts;
 
     /**
      * When binding to the service, we return an interface to our messenger
@@ -169,11 +169,11 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         Log.d(LOGTAG, "i toagd1");
 
         //TODO support old API (then remove  @TargetApi(Build.VERSION_CODES.LOLLIPOP))
-        tts.speak("rofl", TextToSpeech.QUEUE_ADD, null, "testmessage673");
+        //tts.speak("jet fuel", TextToSpeech.QUEUE_ADD, null, "testmessage673");
         Log.d(LOGTAG, "i toagd2");
     }
 
-    private void initTts(){
+    private void initTts() {
         //TODO move ttstest to own class
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
@@ -251,6 +251,34 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     }
 
 
+    private Bitmap generateQRCode(String input) {
+        BitMatrix qrMatrix;
+        QRCodeWriter writer = new QRCodeWriter();
+        Bitmap mBitmap = null;
+        try {
+            qrMatrix = writer.encode(input, BarcodeFormat.QR_CODE, 100, 100);
+            mBitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+
+            for (int i = 0; i < 100; i++) {
+                for (int j = 0; j < 100; j++) {
+                    if (qrMatrix.get(i, j)) {
+                        mBitmap.setPixel(i, j, Color.BLACK);
+                    } else {
+                        mBitmap.setPixel(i, j, Color.WHITE);
+                    }
+
+
+                    //mBitmap.setPixel(i, j, qrMatrix.get(i, j) ? Color.BLACK : Color.WHITE);
+                }
+            }
+            Log.d(LOGTAG, "qrCreated");
+
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+        return mBitmap;
+    }
+
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
@@ -272,14 +300,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         sendMsgToActivity(Message.obtain(null, MSG_CHATMSGRECEIVED, readMessage));
                         break;
                     case MessageManager.MSGTYPE_INAUTH:
-                        BitMatrix qrMatrix;
-                        QRCodeWriter writer = new QRCodeWriter();
-                        try {
-                            qrMatrix = writer.encode("673673", BarcodeFormat.QR_CODE, 100, 100);
-
-                        } catch (WriterException e) {
-                            e.printStackTrace();
-                        }
+                        sendMsgToActivity(Message.obtain(null,
+                                AUTH_BARCODE, generateQRCode("jet fuel")));
 
                         //send int as byte[]
                         byte[] bytes = ByteBuffer.allocate(4).putInt(123123).array();

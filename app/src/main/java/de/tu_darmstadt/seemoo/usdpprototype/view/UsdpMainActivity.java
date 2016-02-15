@@ -1,19 +1,17 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
-import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -25,13 +23,18 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
@@ -46,10 +49,16 @@ public class UsdpMainActivity extends AppCompatActivity {
     private ArrayAdapter la_discoveredDevices;
     private ArrayList<String> valueList = new ArrayList<String>();
     private ToggleButton btn_toggleSvc;
+
+
+    private AuthBarcodeDialogFragment authDialog;
+
     // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
     private boolean mBound;
+
+
     /**
      * Class for interacting with the main interface of the service.
      */
@@ -110,6 +119,18 @@ public class UsdpMainActivity extends AppCompatActivity {
         initViewComponents();
     }
 
+
+    private void showAuthBarcodeDialogFragment(Bitmap bmp) {
+        Bundle bundle = new Bundle();
+        int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
+        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
+        bundle.putIntArray(AuthBarcodeDialogFragment.BARCODE_CODE, pixels);
+        bundle.putInt(AuthBarcodeDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
+        bundle.putInt(AuthBarcodeDialogFragment.BARCODE_WIDTH, bmp.getWidth());
+        authDialog.setArguments(bundle);
+        authDialog.show(getSupportFragmentManager(), "auth");
+    }
+
     private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -148,6 +169,17 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
+
+        ImageButton btn_auth = (ImageButton) findViewById(R.id.btn_auth);
+        btn_auth.setImageBitmap(generateQR("jet fuel"));
+        btn_auth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
+            }
+        });
+
+        authDialog = new AuthBarcodeDialogFragment();
 
         btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
         Intent in = new Intent(this, UsdpService.class);
@@ -255,6 +287,51 @@ public class UsdpMainActivity extends AppCompatActivity {
         bindServiceIntent = new Intent(this, UsdpService.class);
     }
 
+    private Bitmap generateQR(String input) {
+        int width = 200;
+        int height = 200;
+        BitMatrix qrMatrix;
+        QRCodeWriter writer = new QRCodeWriter();
+        Bitmap mBitmap = null;
+        try {
+            qrMatrix = writer.encode(input, BarcodeFormat.QR_CODE, width, height);
+            mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    if (qrMatrix.get(i, j)) {
+                        mBitmap.setPixel(i, j, Color.BLACK);
+                    } else {
+                        mBitmap.setPixel(i, j, Color.WHITE);
+                    }
+
+
+                    //mBitmap.setPixel(i, j, qrMatrix.get(i, j) ? Color.BLACK : Color.WHITE);
+                }
+            }
+            Log.d(LOGTAG, "qrCreated");
+
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+        return mBitmap;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 0) {
+
+            if (resultCode == RESULT_OK) {
+                String contents = data.getStringExtra("SCAN_RESULT");
+                Toast.makeText(UsdpMainActivity.this, contents, Toast.LENGTH_SHORT).show();
+            }
+            if (resultCode == RESULT_CANCELED) {
+                //handle cancel
+            }
+        }
+    }
+
     // TODO move to its own file?
     public interface MessageTarget {
         public Handler getHandler();
@@ -278,6 +355,10 @@ public class UsdpMainActivity extends AppCompatActivity {
                     break;
                 case UsdpService.MSG_CHATMSGRECEIVED:
                     Toast.makeText(UsdpMainActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                    break;
+                case UsdpService.AUTH_BARCODE:
+                    Bitmap mBitmap = (Bitmap) msg.obj;
+                    showAuthBarcodeDialogFragment(mBitmap);
                     break;
                 default:
                     super.handleMessage(msg);
