@@ -7,7 +7,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.wifi.p2p.WifiP2pConfig;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,42 +22,27 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.widget.Toast;
 
-//wifip2p
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthManaIV;
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
-import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
-import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
-import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocketHandler;
-import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBroadcastReceiver;
-import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
-
-import android.net.wifi.p2p.WifiP2pConfig;
-import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pManager;
-
 import com.google.zxing.BarcodeFormat;
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatReader;
-import com.google.zxing.NotFoundException;
-import com.google.zxing.Result;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
-import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
+
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthManaIV;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocketHandler;
+import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBroadcastReceiver;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
+
+//wifip2p
 
 /**
  * Created by kenny on 29.01.16.
@@ -98,10 +87,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     TextToSpeech tts;
     //WifiP2p fields
     private WiFiDirectBroadcastReceiver mReceiver;
-    private HashMap<String, WifiP2pDevice> discoveredDevices = new HashMap<String, WifiP2pDevice>();
+    private HashMap<String, WifiP2pDevice> discoveredDevices = new HashMap<>();
     private WifiP2pManager wifiP2pManager;
     private WifiP2pManager.Channel mChannel;
-    private IntentFilter mIntentFilter;
     private Handler handler = new Handler(this);
     private Messenger activityMessenger;
     private String LOGTAG = "UsdpService";
@@ -154,7 +142,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         mChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
         mReceiver = new WiFiDirectBroadcastReceiver(wifiP2pManager, mChannel, this);
 
-        mIntentFilter = new IntentFilter();
+        IntentFilter mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
@@ -187,7 +175,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     }
 
     public void peersAvailable(WifiP2pDeviceList peers) {
-        WifiP2pDevice device = null;
+        WifiP2pDevice device;
         Log.d(LOGTAG, "list incoming");
 
         for (WifiP2pDevice peer : peers.getDeviceList()) {
@@ -197,7 +185,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
             Log.d(LOGTAG, deviceaddr + " found");
         }
         if (activityMessenger != null) {
-            ArrayList<String> deviceMacs = new ArrayList<String>(discoveredDevices.keySet());
+            ArrayList<String> deviceMacs = new ArrayList<>(discoveredDevices.keySet());
             sendMsgToActivity(Message.obtain(null,
                     MSG_PEERSDISCOVERED, deviceMacs));
         }
@@ -217,7 +205,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo p2pInfo) {
-        Thread handler = null;
+        Thread handler;
         /*
          * The group owner accepts connections using a server socket and then spawns a
          * client socket for every client. This is handled by {@code
@@ -392,8 +380,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         secureAuthentication.init();
                     }
                     int publicKey = secureAuthentication.getPublicDeviceKey();
-
-                    Toast.makeText(getApplicationContext(), publicKey + "", Toast.LENGTH_LONG);
 
                     Log.d(LOGTAG, "publicKey: " + publicKey);
                     byte[] authMyPublicKey = ByteBuffer.allocate(4).putInt(publicKey).array();

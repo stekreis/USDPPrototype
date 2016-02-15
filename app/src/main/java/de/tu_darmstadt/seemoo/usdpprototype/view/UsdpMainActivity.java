@@ -12,6 +12,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -41,15 +42,13 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 
 public class UsdpMainActivity extends AppCompatActivity {
 
-    private final String LOGTAG = "UsdpMainActivity";
+    private static final String LOGTAG = "UsdpMainActivity";
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
 
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
-    private ArrayList<String> valueList = new ArrayList<String>();
-    private ToggleButton btn_toggleSvc;
-
+    private ArrayList<String> valueList = new ArrayList<>();
 
     private AuthBarcodeDialogFragment authDialog;
 
@@ -127,8 +126,10 @@ public class UsdpMainActivity extends AppCompatActivity {
         bundle.putIntArray(AuthBarcodeDialogFragment.BARCODE_CODE, pixels);
         bundle.putInt(AuthBarcodeDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
         bundle.putInt(AuthBarcodeDialogFragment.BARCODE_WIDTH, bmp.getWidth());
-        authDialog.setArguments(bundle);
-        authDialog.show(getSupportFragmentManager(), "auth");
+        if(!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "auth");
+        }
     }
 
     private void initViewComponents() {
@@ -176,13 +177,15 @@ public class UsdpMainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
+
+                Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                vib.vibrate(500);
             }
         });
 
         authDialog = new AuthBarcodeDialogFragment();
 
-        btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
-        Intent in = new Intent(this, UsdpService.class);
+        ToggleButton btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
         btn_toggleSvc.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -200,7 +203,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
         valueList.add("Discovered devices");
 
-        la_discoveredDevices = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, valueList);
+        la_discoveredDevices = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, valueList);
         lv_discoveredDevices = (ListView) findViewById(R.id.lv_discoveredDev);
         lv_discoveredDevices.setAdapter(la_discoveredDevices);
         lv_discoveredDevices.setBackgroundColor(Color.BLUE);
@@ -237,9 +240,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     /**
-     * Send a prepared message to the service, takes care of error handling
+     * Send a prepared message to the service, method takes care of error handling
      *
-     * @param msg
+     * @param msg message to send
      */
     private void sendMsgtoService(Message msg) {
         try {
@@ -328,6 +331,7 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
             if (resultCode == RESULT_CANCELED) {
                 //handle cancel
+                Toast.makeText(UsdpMainActivity.this, "intent was cancelled", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -340,6 +344,7 @@ public class UsdpMainActivity extends AppCompatActivity {
     /**
      * inner class, handles messages from @UsdpService
      */
+    @SuppressWarnings("unchecked")
     class InternalMsgIncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
@@ -349,6 +354,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     break;
                 case UsdpService.MSG_PEERSDISCOVERED:
                     valueList.clear();
+
                     valueList.addAll((List<String>) msg.obj);
                     //addDeviceNames();
                     la_discoveredDevices.notifyDataSetChanged();
