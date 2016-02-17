@@ -8,6 +8,8 @@ import java.math.BigInteger;
 public abstract class SecureAuthentication {
 
 
+
+
     public abstract void init();
 
     public abstract int generateKey(int othrPublicVal);

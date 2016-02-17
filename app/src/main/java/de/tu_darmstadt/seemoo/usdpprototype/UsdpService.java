@@ -153,11 +153,11 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void talk() {
+    private void talk(String text) {
         Log.d(LOGTAG, "i toagd1");
 
         //TODO support old API (then remove  @TargetApi(Build.VERSION_CODES.LOLLIPOP))
-        //tts.speak("jet fuel", TextToSpeech.QUEUE_ADD, null, "testmessage673");
+        //tts.speak(text, TextToSpeech.QUEUE_ADD, null, "testmessage673");
         Log.d(LOGTAG, "i toagd2");
     }
 
@@ -304,7 +304,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     default:
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 0, msg.arg1));
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 1, msg.arg1));
-                        talk();
+                        talk(new String((byte[])msg.obj,0,msg.arg1));
                 }
                 break;
             default:
@@ -402,9 +402,10 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     break;
                 case MSG_SENDCHATMSG:
                     if (messageManager != null) {
-                        messageManager.write("hello there!".getBytes());
+                        String text = (String)msg.obj;
+                        messageManager.write(text.getBytes());
                         //pushMessage("Me: " + chatLine.getText().toString());
-                        talk();
+                        talk(text);
                     }
                 default:
                     super.handleMessage(msg);

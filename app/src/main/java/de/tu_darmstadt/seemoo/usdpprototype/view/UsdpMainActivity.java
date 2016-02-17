@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -24,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -39,6 +41,7 @@ import java.util.List;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
 public class UsdpMainActivity extends AppCompatActivity {
 
@@ -50,7 +53,10 @@ public class UsdpMainActivity extends AppCompatActivity {
     private ArrayAdapter la_discoveredDevices;
     private ArrayList<String> valueList = new ArrayList<>();
 
+    private EditText et_authtext;
+
     private AuthBarcodeDialogFragment authDialog;
+    private blSiBDialogFragment authblsibDialog;
 
     // Service connection
     private Messenger mService = null;
@@ -118,6 +124,16 @@ public class UsdpMainActivity extends AppCompatActivity {
         initViewComponents();
     }
 
+    // TODO move to own class? with other overall usable methods
+    public static boolean isPackageInstalled(String packagename, Context context) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            pm.getPackageInfo(packagename, PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
 
     private void showAuthBarcodeDialogFragment(Bitmap bmp) {
         Bundle bundle = new Bundle();
@@ -126,7 +142,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         bundle.putIntArray(AuthBarcodeDialogFragment.BARCODE_CODE, pixels);
         bundle.putInt(AuthBarcodeDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
         bundle.putInt(AuthBarcodeDialogFragment.BARCODE_WIDTH, bmp.getWidth());
-        if(!authDialog.isFragmentUIActive()) {
+        if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "auth");
         }
@@ -140,7 +156,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG));
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG, et_authtext.getText().toString()));
             }
         });
 
@@ -170,20 +186,43 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
+        final Identicon identicon = (Identicon) findViewById(R.id.identicon);
+        identicon.show("john.doe@example.orw");
+
 
         ImageButton btn_auth = (ImageButton) findViewById(R.id.btn_auth);
         btn_auth.setImageBitmap(generateQR("jet fuel"));
+
         btn_auth.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
+                // TODO uncomment
+                //showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
+
+                // currently not supported(anim error as iv_blsib is not accessible
+                //authblsibDialog.show(getSupportFragmentManager(), "blsib");
+                //authblsibDialog.anim();
+
+
+
+
+                identicon.show(et_authtext.getText().toString());
+
 
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                vib.vibrate(500);
+                vib.vibrate(100);
             }
         });
 
+
+
+
+
+
         authDialog = new AuthBarcodeDialogFragment();
+        authblsibDialog = new blSiBDialogFragment();
+
+        et_authtext = (EditText) findViewById(R.id.et_text);
 
         ToggleButton btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
         btn_toggleSvc.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {

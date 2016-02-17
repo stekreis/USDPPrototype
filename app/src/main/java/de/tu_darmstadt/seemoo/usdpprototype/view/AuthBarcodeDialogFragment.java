@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 
@@ -59,9 +60,16 @@ public class AuthBarcodeDialogFragment extends DialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 //Intent result is received by Activity
-                Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-                intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
-                getActivity().startActivityForResult(intent, 0);
+
+                if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client", getContext())) {
+                    Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+                    intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
+                    getActivity().startActivityForResult(intent, 0);
+                } else {
+                    // TODO goto market, install. check this at the start (kind of init app generally)
+                    Toast.makeText(getContext(), "install zxing Barcode Scanner", Toast.LENGTH_SHORT).show();
+                    Log.d(LOGTAG, "install zxing Barcode Scanner");
+                }
             }
         }).setNegativeButton("neg", new DialogInterface.OnClickListener() {
             @Override
