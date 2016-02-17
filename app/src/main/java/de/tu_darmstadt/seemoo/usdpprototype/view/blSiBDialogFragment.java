@@ -16,6 +16,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 
 /**
@@ -24,7 +27,21 @@ import de.tu_darmstadt.seemoo.usdpprototype.R;
 public class blSiBDialogFragment extends DialogFragment {
 
     private static final String LOGTAG = "blSiBDialogFragment";
+    final Handler myHandler = new Handler();
+    boolean[] pattern = {true, false, false, true, true, true, false, true, false, true, false, false, true};
+    int i = 0;
+    Timer myTimer;
     private ImageView iv_blsib;
+    final Runnable myRunnable = new Runnable() {
+        public void run() {
+            Log.d(LOGTAG, "running " + i);
+            if (pattern[i % pattern.length]) {
+                iv_blsib.setVisibility(View.VISIBLE);
+            } else {
+                iv_blsib.setVisibility(View.INVISIBLE);
+            }
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -46,8 +63,8 @@ public class blSiBDialogFragment extends DialogFragment {
         View view = layoutInflater.inflate(R.layout.dialog_auth_blsib, null);
 
         iv_blsib = (ImageView) view.findViewById(R.id.iv_blsib);
-
         iv_blsib.setBackgroundColor(Color.LTGRAY);
+
 
         builder.setView(view).setPositiveButton("pos", new DialogInterface.OnClickListener() {
             @Override
@@ -66,15 +83,15 @@ public class blSiBDialogFragment extends DialogFragment {
         return builder.create();
     }
 
-    public void anim(){
-        final boolean[] pattern = {true,false,false,true,true,true,false,true,false,true,false,false,true};
+    public void anim() {
+        final boolean[] pattern = {true, false, false, true, true, true, false, true, false, true, false, false, true};
 
 /*
         final Handler handler = new Handler();
         new Thread(new Runnable() {
             @Override
             public void run() {
-                int timeToBlink = 1000;    //in milissegunds
+                int timeToBlink = 1000;    //in milliseconds
                 try{Thread.sleep(timeToBlink);}catch (Exception e) {}
                 handler.post(new Runnable() {
                     private static int pos = 0;
@@ -116,9 +133,33 @@ public class blSiBDialogFragment extends DialogFragment {
         }*/
     }
 
-
     public boolean isFragmentUIActive() {
         return isAdded() && !isDetached() && !isRemoving();
     }
 
+    private void UpdateGUI() {
+        i++;
+        myHandler.post(myRunnable);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        i = 0;
+        myTimer = new Timer();
+        myTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                UpdateGUI();
+            }
+        }, 0, 1000);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (myTimer != null) {
+            myTimer.cancel();
+        }
+    }
 }

@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -187,7 +188,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
 
         final Identicon identicon = (Identicon) findViewById(R.id.identicon);
-        identicon.show("john.doe@example.orw");
+        identicon.show("jet fuel2");
 
 
         ImageButton btn_auth = (ImageButton) findViewById(R.id.btn_auth);
@@ -200,13 +201,12 @@ public class UsdpMainActivity extends AppCompatActivity {
                 //showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
 
                 // currently not supported(anim error as iv_blsib is not accessible
-                //authblsibDialog.show(getSupportFragmentManager(), "blsib");
+                authblsibDialog.show(getSupportFragmentManager(), "blsib");
                 //authblsibDialog.anim();
 
-
-
-
                 identicon.show(et_authtext.getText().toString());
+
+
 
 
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
@@ -218,9 +218,9 @@ public class UsdpMainActivity extends AppCompatActivity {
 
 
 
-
         authDialog = new AuthBarcodeDialogFragment();
         authblsibDialog = new blSiBDialogFragment();
+
 
         et_authtext = (EditText) findViewById(R.id.et_text);
 
