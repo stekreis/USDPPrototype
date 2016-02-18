@@ -61,7 +61,7 @@
         android:layout_below="@+id/btn_auth"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
-    <de.tu_darmstadt.seemoo.usdpprototype.view.identicons.SymmetricIdenticon
+    <de.tu_darmstadt.seemoo.usdpprototype.view.identicons.AsymmetricIdenticon
         android:id="@+id/identicon"
         android:layout_below="@+id/et_text"
         android:layout_width="48dp"

@@ -1,13 +1,21 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
-import android.nfc.NfcAdapter;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,6 +24,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
+//import android.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -42,6 +51,11 @@ import java.util.List;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
 public class UsdpMainActivity extends AppCompatActivity {
@@ -53,16 +67,16 @@ public class UsdpMainActivity extends AppCompatActivity {
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
     private ArrayList<String> valueList = new ArrayList<>();
-
     private EditText et_authtext;
-
-    private AuthBarcodeDialogFragment authDialog;
-    private blSiBDialogFragment authblsibDialog;
-
+    private AuthDialogFragment authDialog;
     // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
     private boolean mBound;
+
+    private SensorManager sensorManager = null;
+    private Sensor lightSensor = null;
+    private float lightQuantity;
 
 
     /**
@@ -118,13 +132,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     };
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_usdp_main);
-        initViewComponents();
-    }
-
     // TODO move to own class? with other overall usable methods
     public static boolean isPackageInstalled(String packagename, Context context) {
         PackageManager pm = context.getPackageManager();
@@ -136,16 +143,106 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
-    private void showAuthBarcodeDialogFragment(Bitmap bmp) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_usdp_main);
+        initViewComponents();
+
+        //lightsensor();
+    }
+
+    private void lightsensor() {
+        // Obtain references to the SensorManager and the Light Sensor
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+
+        // Implement a listener to receive updates
+        SensorEventListener listener = new SensorEventListener() {
+            boolean light = false;
+            long lastTimeMillis = 0;
+
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                lightQuantity = event.values[0];
+//                Log.d(LOGTAG, "licht: " + lightQuantity);
+                if (light && lightQuantity < 10) {
+                    Log.d(LOGTAG, "off");
+                    Log.d(LOGTAG, "time passed :" + (System.currentTimeMillis() - lastTimeMillis));
+                    light = false;
+                } else if (!light && lightQuantity > 80) {
+                    Log.d(LOGTAG, "on");
+                    Log.d(LOGTAG, "time passed :" + (System.currentTimeMillis() - lastTimeMillis));
+                    light = true;
+                }
+
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                Log.d(LOGTAG, "accuracy changed");
+            }
+        };
+
+        // Register the listener with the light sensor -- choosing
+        // one of the SensorManager.SENSOR_DELAY_* constants.
+        sensorManager.registerListener(
+                listener, lightSensor, SensorManager.SENSOR_DELAY_UI);
+    }
+
+    private void showAuthVicPDialogFragment(String phrase) {
+        authDialog = new VicPDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(VicPDialogFragment.AUTH_VICP, phrase);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authvicp");
+        }
+    }
+
+    private void showAuthVicIDialogFragment(Bitmap bmp) {
+
+        authDialog = new VicIDialogFragment();
         Bundle bundle = new Bundle();
         int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
         bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-        bundle.putIntArray(AuthBarcodeDialogFragment.BARCODE_CODE, pixels);
-        bundle.putInt(AuthBarcodeDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
-        bundle.putInt(AuthBarcodeDialogFragment.BARCODE_WIDTH, bmp.getWidth());
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-I: compare images");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with image on other device");
+        bundle.putIntArray(VicIDialogFragment.IMG_IMAGE, pixels);
+        bundle.putInt(VicIDialogFragment.IMG_HEIGHT, bmp.getHeight());
+        bundle.putInt(VicIDialogFragment.IMG_WIDTH, bmp.getWidth());
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
-            authDialog.show(getSupportFragmentManager(), "auth");
+            authDialog.show(getSupportFragmentManager(), "authvici");
+        }
+    }
+
+
+    private void showAuthBlSibDialogFragment(boolean[] pattern) {
+        authDialog = new BlSiBDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
+        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIB, pattern);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authblsib");
+        }
+    }
+
+    private void showAuthBarcodeDialogFragment(Bitmap bmp) {
+        authDialog = new BarSibDialogFragment();
+        Bundle bundle = new Bundle();
+        int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
+        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBcode: Scan Barcode");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with image on other device");
+        bundle.putIntArray(BarSibDialogFragment.BARCODE_CODE, pixels);
+        bundle.putInt(BarSibDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
+        bundle.putInt(BarSibDialogFragment.BARCODE_WIDTH, bmp.getWidth());
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authbarsib");
         }
     }
 
@@ -188,7 +285,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
 
         final Identicon identicon = (Identicon) findViewById(R.id.identicon);
-        identicon.show("jet fuel2");
+        //identicon.show("jet fuel");
 
 
         ImageButton btn_auth = (ImageButton) findViewById(R.id.btn_auth);
@@ -198,28 +295,43 @@ public class UsdpMainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // TODO uncomment
-                //showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
+                showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
 
                 // currently not supported(anim error as iv_blsib is not accessible
-                authblsibDialog.show(getSupportFragmentManager(), "blsib");
-                //authblsibDialog.anim();
+                boolean[] pattern = {true, false, false, true, true, true, false, true, false, true, false, false, true};
+                showAuthBlSibDialogFragment(pattern);
 
-                identicon.show(et_authtext.getText().toString());
+                //String phrase = "one, two, three, four, five, six, seven, eight, nine, ten";
+                //showAuthVicPDialogFragment(phrase);
 
 
+                String testtext = et_authtext.getText().toString();
+                identicon.show(testtext);
 
 
+                Bitmap bm = identicon.getBitmap(testtext);
+                showAuthVicIDialogFragment(bm);
+
+/*
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 50);
+
+                if (toneGen.startTone(ToneGenerator.TONE_DTMF_1)) {
+
+                    try {
+                        Thread.sleep(500);
+                        toneGen.stopTone();
+                        toneGen.startTone(ToneGenerator.TONE_DTMF_1);
+                        toneGen.stopTone();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+*/
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                 vib.vibrate(100);
             }
         });
-
-
-
-
-
-        authDialog = new AuthBarcodeDialogFragment();
-        authblsibDialog = new blSiBDialogFragment();
 
 
         et_authtext = (EditText) findViewById(R.id.et_text);

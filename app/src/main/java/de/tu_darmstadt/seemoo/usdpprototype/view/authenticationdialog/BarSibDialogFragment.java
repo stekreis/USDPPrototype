@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.view;
+package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -7,20 +7,21 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class AuthBarcodeDialogFragment extends DialogFragment {
+public class BarSibDialogFragment extends AuthDialogFragment {
 
     public static final String BARCODE_CODE = "BARCODE_CODE";
     public static final String BARCODE_WIDTH = "BARCODE_WIDTH";
@@ -30,14 +31,11 @@ public class AuthBarcodeDialogFragment extends DialogFragment {
 
     private Bitmap barcode = null;
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(LOGTAG, "created");
-        int width = getArguments().getInt(BARCODE_WIDTH);
-        int height = getArguments().getInt(BARCODE_HEIGHT);
-        barcode = Bitmap.createBitmap((int[]) getArguments().get(BARCODE_CODE), 0, width, width, height, Bitmap.Config.ARGB_8888);
+
     }
 
     @Override
@@ -51,17 +49,25 @@ public class AuthBarcodeDialogFragment extends DialogFragment {
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
 
-        View view = layoutInflater.inflate(R.layout.dialog_auth_barcode, null);
+        View view = layoutInflater.inflate(R.layout.dialog_auth_img, null);
 
-        ImageView iv_barcode = (ImageView) view.findViewById(R.id.iv_barcode);
+        TextView tv_title = (TextView) view.findViewById(R.id.tv_authdialog_title);
+        tv_title.setText(title);
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authdialog_info);
+        tv_info.setText(info);
+
+        ImageView iv_barcode = (ImageView) view.findViewById(R.id.iv_image);
+        int width = bundle.getInt(BARCODE_WIDTH);
+        int height = bundle.getInt(BARCODE_HEIGHT);
+        barcode = Bitmap.createBitmap((int[]) getArguments().get(BARCODE_CODE), 0, width, width, height, Bitmap.Config.ARGB_8888);
         iv_barcode.setImageBitmap(barcode);
 
         builder.setView(view).setPositiveButton("pos", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 //Intent result is received by Activity
-
-                if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client", getContext())) {
+                Toast.makeText(getContext(), "checking if zxing is installed", Toast.LENGTH_SHORT).show();
+                if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client.android", getContext())) {
                     Intent intent = new Intent("com.google.zxing.client.android.SCAN");
                     intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
                     getActivity().startActivityForResult(intent, 0);
@@ -74,14 +80,10 @@ public class AuthBarcodeDialogFragment extends DialogFragment {
         }).setNegativeButton("neg", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                AuthBarcodeDialogFragment.this.getDialog().cancel();
+                BarSibDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();
-    }
-
-    public boolean isFragmentUIActive() {
-        return isAdded() && !isDetached() && !isRemoving();
     }
 
 }

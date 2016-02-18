@@ -22,36 +22,36 @@ import android.util.AttributeSet;
 
 public class AsymmetricIdenticon extends Identicon {
 
-	public AsymmetricIdenticon(Context context) {
-		super(context);
-	}
+    public AsymmetricIdenticon(Context context) {
+        super(context);
+    }
 
-	public AsymmetricIdenticon(Context context, AttributeSet attrs) {
-		super(context, attrs);
-	}
+    public AsymmetricIdenticon(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
 
-	public AsymmetricIdenticon(Context context, AttributeSet attrs, int defStyleAttr) {
-		super(context, attrs, defStyleAttr);
-	}
+    public AsymmetricIdenticon(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+    }
 
-	@Override
-	protected boolean isCellVisible(int row, int column) {
-		return getByte(3 + row * getColumnCount() + column) >= 0;
-	}
+    @Override
+    protected boolean isCellVisible(int row, int column) {
+        return getByte(3 + row * getColumnCount() + column) >= 0;
+    }
 
-	@Override
-	protected int getIconColor() {
-		return Color.rgb(getByte(0)+128, getByte(1)+128, getByte(2)+128);
-	}
+    @Override
+    protected int getIconColor() {
+        return Color.rgb(getByte(0) + 128, getByte(1) + 128, getByte(2) + 128);
+    }
 
-	@Override
-	protected int getRowCount() {
-		return 4;
-	}
+    @Override
+    protected int getRowCount() {
+        return 4;
+    }
 
-	@Override
-	protected int getColumnCount() {
-		return 4;
-	}
+    @Override
+    protected int getColumnCount() {
+        return 4;
+    }
 
 }
