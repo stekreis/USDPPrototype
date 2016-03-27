@@ -9,6 +9,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.hardware.Camera;
+import android.hardware.camera2.*;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -54,6 +56,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CameraDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
@@ -190,6 +193,16 @@ public class UsdpMainActivity extends AppCompatActivity {
                 listener, lightSensor, SensorManager.SENSOR_DELAY_UI);
     }
 
+    private void showAuthCamDialogFragment(String phrase) {
+        authDialog = new CameraDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(CameraDialogFragment.AUTH_BLSIB, phrase);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authblsibcam");
+        }
+    }
+
     private void showAuthVicPDialogFragment(String phrase) {
         authDialog = new VicPDialogFragment();
         Bundle bundle = new Bundle();
@@ -216,7 +229,6 @@ public class UsdpMainActivity extends AppCompatActivity {
             authDialog.show(getSupportFragmentManager(), "authvici");
         }
     }
-
 
     private void showAuthBlSibDialogFragment(boolean[] pattern) {
         authDialog = new BlSiBDialogFragment();
@@ -246,6 +258,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -311,6 +324,10 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                 Bitmap bm = identicon.getBitmap(testtext);
                 showAuthVicIDialogFragment(bm);
+
+                showAuthVicPDialogFragment(testtext);
+
+                showAuthCamDialogFragment(testtext);
 
 /*
                 ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 50);
