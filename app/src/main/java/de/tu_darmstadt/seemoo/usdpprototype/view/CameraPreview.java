@@ -13,10 +13,9 @@ import java.io.IOException;
  */
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
+    private static final String LOGTAG = "CameraPreview";
     private SurfaceHolder mHolder;
     private Camera mCamera;
-
-    private static final String LOGTAG = "CameraPreview";
 
 
     public CameraPreview(Context context, Camera camera) {
@@ -31,10 +30,48 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
+    private boolean ledBright(byte[] data, int width) {
+
+
+        int yStride = (int) Math.ceil(width / 16.0) * 16;
+//        int yRowIndex = yStride * y;
+
+        //Log.d(LOGTAG, data[yStride]+"/0");
+
+        int total = 0;
+        int totalCount = 0;
+        int yPos = yStride;
+        while (yPos < data.length) {
+            totalCount++;
+            total += data[yPos];
+            yPos += yStride;
+        }
+
+
+        Log.d(LOGTAG, "guggemol " + total/totalCount);
+        if(total/totalCount>0) {
+            Log.d(LOGTAG, "white");
+        }
+
+
+//        Log.d(LOGTAG, data[2]+"/2");
+
+
+        return true;
+    }
+
     public void surfaceCreated(SurfaceHolder holder) {
         // The Surface has been created, now tell the camera where to draw the preview.
         try {
             mCamera.setPreviewDisplay(holder);
+            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+                @Override
+                public void onPreviewFrame(byte[] data, Camera camera) {
+                    //og.d(LOGTAG, "prevFormat " + camera.getParameters().getPreviewFormat());
+                    ledBright(data, camera.getParameters().getPreviewSize().width);
+                }
+            });
+
             mCamera.startPreview();
         } catch (IOException e) {
             Log.d(LOGTAG, "Error setting camera preview: " + e.getMessage());
@@ -54,7 +91,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // If your preview can change or rotate, take care of those events here.
         // Make sure to stop the preview before resizing or reformatting it.
 
-        if (mHolder.getSurface() == null){
+        if (mHolder.getSurface() == null) {
             // preview surface does not exist
             return;
         }
@@ -62,7 +99,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // stop preview before making changes
         try {
             mCamera.stopPreview();
-        } catch (Exception e){
+        } catch (Exception e) {
             // ignore: tried to stop a non-existent preview
         }
 
@@ -74,7 +111,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.setPreviewDisplay(mHolder);
             mCamera.startPreview();
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Log.d(LOGTAG, "Error starting camera preview: " + e.getMessage());
         }
     }

@@ -93,7 +93,7 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
             public void run() {
                 UpdateGUI();
             }
-        }, 0, 500);
+        }, 0, 2000);
     }
 
     @Override
