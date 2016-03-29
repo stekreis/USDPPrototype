@@ -32,11 +32,9 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private boolean ledBright(byte[] data, int width) {
 
-
+// TODO check if correctly addressed brightness
         int yStride = (int) Math.ceil(width / 16.0) * 16;
-//        int yRowIndex = yStride * y;
 
-        //Log.d(LOGTAG, data[yStride]+"/0");
 
         int total = 0;
         int totalCount = 0;
@@ -48,31 +46,30 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
 
 
-        Log.d(LOGTAG, "guggemol " + total/totalCount);
-        if(total/totalCount>0) {
+        Log.d(LOGTAG, "brightness: " + total / totalCount);
+        if (total / totalCount > 50) {
             Log.d(LOGTAG, "white");
+            return true;
         }
-
-
-//        Log.d(LOGTAG, data[2]+"/2");
-
-
-        return true;
+        return false;
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
         // The Surface has been created, now tell the camera where to draw the preview.
         try {
-            mCamera.setPreviewDisplay(holder);
-            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-                @Override
-                public void onPreviewFrame(byte[] data, Camera camera) {
-                    //og.d(LOGTAG, "prevFormat " + camera.getParameters().getPreviewFormat());
-                    ledBright(data, camera.getParameters().getPreviewSize().width);
-                }
-            });
+            if (mCamera != null) {
+                mCamera.setDisplayOrientation(90);
+                mCamera.setPreviewDisplay(holder);
+                mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+                    @Override
+                    public void onPreviewFrame(byte[] data, Camera camera) {
+                        //og.d(LOGTAG, "prevFormat " + camera.getParameters().getPreviewFormat());
+                        ledBright(data, camera.getParameters().getPreviewSize().width);
+                    }
+                });
 
-            mCamera.startPreview();
+                mCamera.startPreview();
+            }
         } catch (IOException e) {
             Log.d(LOGTAG, "Error setting camera preview: " + e.getMessage());
         }

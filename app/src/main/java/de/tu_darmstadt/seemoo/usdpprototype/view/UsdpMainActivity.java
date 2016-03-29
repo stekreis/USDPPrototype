@@ -18,11 +18,17 @@ import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.ToneGenerator;
+import android.nfc.FormatException;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcEvent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
@@ -53,15 +59,20 @@ import java.util.List;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthSif;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.ButtonDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CameraDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
-public class UsdpMainActivity extends AppCompatActivity {
+public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.CreateNdefMessageCallback {
+
+    NfcAdapter mNfcAdapter;
 
     private static final String LOGTAG = "UsdpMainActivity";
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
@@ -152,6 +163,17 @@ public class UsdpMainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_usdp_main);
         initViewComponents();
 
+        //fNFC
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (mNfcAdapter == null) {
+            Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        // Register callback
+        mNfcAdapter.setNdefPushMessageCallback(this, this);
+
+
         //lightsensor();
     }
 
@@ -213,6 +235,16 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    private void showAuthInfoDialogFragment(String info) {
+        authDialog = new AuthInfoDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthInfoDialogFragment.AUTH_INFOONLY, info);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "tzefuginfo");
+        }
+    }
+
     private void showAuthVicIDialogFragment(Bitmap bmp) {
 
         authDialog = new VicIDialogFragment();
@@ -255,6 +287,18 @@ public class UsdpMainActivity extends AppCompatActivity {
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authbarsib");
+        }
+    }
+
+
+    private void showBtnDialogFragment() {
+        authDialog = new ButtonDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA_VB");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button when triggered by vibration");
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authblsib");
         }
     }
 
@@ -329,7 +373,22 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                 showAuthCamDialogFragment(testtext);
 
-/*
+                showBtnDialogFragment();
+
+                showAuthInfoDialogFragment("shakeshake");
+
+                // NFC
+                NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(getApplicationContext());
+                if (nfcAdapter == null) return;  // NFC not available on this device
+                NdefMessage msg = null;
+                try {
+                    msg = new NdefMessage("beammeupscotty".getBytes());
+                    nfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
+                } catch (FormatException e) {
+                    e.printStackTrace();
+                }
+
+
                 ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 50);
 
                 if (toneGen.startTone(ToneGenerator.TONE_DTMF_1)) {
@@ -344,7 +403,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     }
                 }
 
-*/
+
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                 vib.vibrate(100);
             }
@@ -407,6 +466,44 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
     }
 
+    /*
+    NFC test
+
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Check to see that the Activity started due to an Android Beam
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+            processIntent(getIntent());
+        }
+    }
+    */
+    @Override
+    public void onNewIntent(Intent intent) {
+        // onResume gets called after this to handle the intent
+        Toast.makeText(UsdpMainActivity.this, "new intent", Toast.LENGTH_SHORT).show();
+        Log.d(LOGTAG, "intent im zelt");
+        setIntent(intent);
+    }
+
+    /**
+     * Parses the NDEF Message from the intent and prints to the TextView
+     */
+    void processIntent(Intent intent) {
+
+        Parcelable[] rawMsgs = intent.getParcelableArrayExtra(
+                NfcAdapter.EXTRA_NDEF_MESSAGES);
+        // only one message sent during the beam
+        NdefMessage msg = (NdefMessage) rawMsgs[0];
+        // record 0 contains the MIME type, record 1 is the AAR, if present
+
+        Toast.makeText(UsdpMainActivity.this, "shaddap", Toast.LENGTH_SHORT).show();
+        Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
+    }
+
+
     /**
      * Send a prepared message to the service, method takes care of error handling
      *
@@ -445,6 +542,11 @@ public class UsdpMainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(LOGTAG, "intent onresum");
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+            processIntent(getIntent());
+            Log.d(LOGTAG, "intent im zelt NFC");
+        }
     }
 
     @Override
@@ -502,6 +604,26 @@ public class UsdpMainActivity extends AppCompatActivity {
                 Toast.makeText(UsdpMainActivity.this, "intent was cancelled", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    @Override
+    public NdefMessage createNdefMessage(NfcEvent event) {
+        String text = ("Beam me up, Android!\n\n" +
+                "Beam Time: " + System.currentTimeMillis());
+        NdefMessage msg = new NdefMessage(
+                new NdefRecord[]{NdefRecord.createMime(
+                        "application/vnd.com.example.android.beam", text.getBytes())
+                        /**
+                         * The Android Application Record (AAR) is commented out. When a device
+                         * receives a push with an AAR in it, the application specified in the AAR
+                         * is guaranteed to run. The AAR overrides the tag dispatch system.
+                         * You can add it back in to guarantee that this
+                         * activity starts when receiving a beamed message. For now, this code
+                         * uses the tag dispatch system.
+                         */
+                        //,NdefRecord.createApplicationRecord("com.example.android.beam")
+                });
+        return msg;
     }
 
     // TODO move to its own file?

@@ -14,22 +14,23 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthSif;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class VicPDialogFragment extends AuthDialogFragment {
+public class AuthInfoDialogFragment extends AuthDialogFragment {
 
-    private static final String LOGTAG = "VicPDialogFrag";
-
-    public static final String AUTH_VICP = "AUTH_VICP";
+    public static final String AUTH_INFOONLY = "AUTH_INFO_ONLY";
+    private static final String LOGTAG = "AuthInfoDialogFrag";
+    AuthSif sif;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(LOGTAG, "created");
-
+        sif = new AuthSif(getContext());
     }
 
     @Override
@@ -43,11 +44,12 @@ public class VicPDialogFragment extends AuthDialogFragment {
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
 
-        View view = layoutInflater.inflate(R.layout.dialog_auth_phrase, null);
+        View view = layoutInflater.inflate(R.layout.dialog_auth_infoonly, null);
 
-        TextView tv = (TextView) view.findViewById(R.id.tv_vicp);
-        String text = bundle.getString(AUTH_VICP);
+        TextView tv = (TextView) view.findViewById(R.id.tv_authdialog_explinfo);
+        String text = bundle.getString(AUTH_INFOONLY);
         tv.setText(text);
+
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
@@ -57,10 +59,16 @@ public class VicPDialogFragment extends AuthDialogFragment {
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                VicPDialogFragment.this.getDialog().cancel();
+                AuthInfoDialogFragment.this.getDialog().cancel();
+                sif.stopSensor();
             }
         });
         return builder.create();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        sif.stopSensor();
+    }
 }

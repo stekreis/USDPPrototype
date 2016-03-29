@@ -62,7 +62,7 @@ public class BarSibDialogFragment extends AuthDialogFragment {
         barcode = Bitmap.createBitmap((int[]) getArguments().get(BARCODE_CODE), 0, width, width, height, Bitmap.Config.ARGB_8888);
         iv_barcode.setImageBitmap(barcode);
 
-        builder.setView(view).setPositiveButton("pos", new DialogInterface.OnClickListener() {
+        builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 //Intent result is received by Activity
@@ -77,7 +77,7 @@ public class BarSibDialogFragment extends AuthDialogFragment {
                     Log.d(LOGTAG, "install zxing Barcode Scanner");
                 }
             }
-        }).setNegativeButton("neg", new DialogInterface.OnClickListener() {
+        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 BarSibDialogFragment.this.getDialog().cancel();

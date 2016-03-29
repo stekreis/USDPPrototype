@@ -9,7 +9,9 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,11 +21,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 /**
  * Created by kenny on 15.02.16.
  */
-public class VicPDialogFragment extends AuthDialogFragment {
+public class ButtonDialogFragment extends AuthDialogFragment {
 
-    private static final String LOGTAG = "VicPDialogFrag";
-
-    public static final String AUTH_VICP = "AUTH_VICP";
+    public static final String AUTH_BTN = "AUTH_BTN";
+    private static final String LOGTAG = "ButtonDialogFragment";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,24 +44,49 @@ public class VicPDialogFragment extends AuthDialogFragment {
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
 
-        View view = layoutInflater.inflate(R.layout.dialog_auth_phrase, null);
+        View view = layoutInflater.inflate(R.layout.dialog_auth_btn, null);
 
-        TextView tv = (TextView) view.findViewById(R.id.tv_vicp);
-        String text = bundle.getString(AUTH_VICP);
+        Button userbtn = (Button) view.findViewById(R.id.btn_recauth);
+
+        userbtn.setOnTouchListener(new ReceiverButtonListener());
+
+/*        TextView tv = (TextView) view.findViewById(R.id.tv_vicp);
+        String text = bundle.getString(AUTH_BTN);
         tv.setText(text);
-
+*/
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                //Intent result is received by Activity
+
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                VicPDialogFragment.this.getDialog().cancel();
+                ButtonDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();
+    }
+
+}
+
+class ReceiverButtonListener implements View.OnTouchListener {
+    private long lastDown;
+    private long lastDuration;
+
+    private static final String LOGTAG = "ReceiverBtnListener";
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            lastDown = System.currentTimeMillis();
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            lastDuration = System.currentTimeMillis() - lastDown;
+            Log.d(LOGTAG, lastDuration + " ms");
+        }
+        return false;
     }
 
 }
