@@ -7,22 +7,16 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.hardware.Camera;
-import android.hardware.camera2.*;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.media.AudioRecord;
 import android.media.ToneGenerator;
-import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
-import android.nfc.NfcEvent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -32,7 +26,6 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
-//import android.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -59,10 +52,9 @@ import java.util.List;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthSif;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.ButtonDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CameraDialogFragment;
@@ -70,13 +62,13 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialog
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
-public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.CreateNdefMessageCallback {
+//import android.app.FragmentManager;
 
-    NfcAdapter mNfcAdapter;
+public class UsdpMainActivity extends AppCompatActivity {
 
     private static final String LOGTAG = "UsdpMainActivity";
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
-
+    private NfcAdapter mNfcAdapter;
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
@@ -162,16 +154,6 @@ public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.Cr
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
         initViewComponents();
-
-        //fNFC
-        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (mNfcAdapter == null) {
-            Toast.makeText(this, "NFC is not available", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-        // Register callback
-        mNfcAdapter.setNdefPushMessageCallback(this, this);
 
 
         //lightsensor();
@@ -377,16 +359,30 @@ public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.Cr
 
                 showAuthInfoDialogFragment("shakeshake");
 
-                // NFC
-                NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(getApplicationContext());
-                if (nfcAdapter == null) return;  // NFC not available on this device
-                NdefMessage msg = null;
-                try {
-                    msg = new NdefMessage("beammeupscotty".getBytes());
-                    nfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
-                } catch (FormatException e) {
-                    e.printStackTrace();
+
+                //fNFC
+                mNfcAdapter = NfcAdapter.getDefaultAdapter(UsdpMainActivity.this);
+                if (mNfcAdapter == null) {
+                    Toast.makeText(UsdpMainActivity.this, "NFC is not available", Toast.LENGTH_LONG).show();
+                    finish();
+                    return;
                 }
+                // Register callback
+                String text = "Message from \"" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + "\"";
+                NdefMessage msg = new NdefMessage(
+                        new NdefRecord[]{NdefRecord.createMime(
+                                "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", text.getBytes())
+                                /**
+                                 * The Android Application Record (AAR) is commented out. When a device
+                                 * receives a push with an AAR in it, the application specified in the AAR
+                                 * is guaranteed to run. The AAR overrides the tag dispatch system.
+                                 * You can add it back in to guarantee that this
+                                 * activity starts when receiving a beamed message. For now, this code
+                                 * uses the tag dispatch system.
+                                 */
+                                //,NdefRecord.createApplicationRecord("com.example.android.beam")
+                        });
+                mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
 
 
                 ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 50);
@@ -466,25 +462,13 @@ public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.Cr
         });
     }
 
-    /*
-    NFC test
-
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Check to see that the Activity started due to an Android Beam
-        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
-            processIntent(getIntent());
-        }
-    }
-    */
     @Override
     public void onNewIntent(Intent intent) {
         // onResume gets called after this to handle the intent
         Toast.makeText(UsdpMainActivity.this, "new intent", Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, "intent im zelt");
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        //startActivity(intent);
         setIntent(intent);
     }
 
@@ -499,7 +483,7 @@ public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.Cr
         NdefMessage msg = (NdefMessage) rawMsgs[0];
         // record 0 contains the MIME type, record 1 is the AAR, if present
 
-        Toast.makeText(UsdpMainActivity.this, "shaddap", Toast.LENGTH_SHORT).show();
+        Toast.makeText(UsdpMainActivity.this, "NFC message transmitted! " + new String(msg.getRecords()[0].getPayload()), Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
     }
 
@@ -604,26 +588,6 @@ public class UsdpMainActivity extends AppCompatActivity implements NfcAdapter.Cr
                 Toast.makeText(UsdpMainActivity.this, "intent was cancelled", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-
-    @Override
-    public NdefMessage createNdefMessage(NfcEvent event) {
-        String text = ("Beam me up, Android!\n\n" +
-                "Beam Time: " + System.currentTimeMillis());
-        NdefMessage msg = new NdefMessage(
-                new NdefRecord[]{NdefRecord.createMime(
-                        "application/vnd.com.example.android.beam", text.getBytes())
-                        /**
-                         * The Android Application Record (AAR) is commented out. When a device
-                         * receives a push with an AAR in it, the application specified in the AAR
-                         * is guaranteed to run. The AAR overrides the tag dispatch system.
-                         * You can add it back in to guarantee that this
-                         * activity starts when receiving a beamed message. For now, this code
-                         * uses the tag dispatch system.
-                         */
-                        //,NdefRecord.createApplicationRecord("com.example.android.beam")
-                });
-        return msg;
     }
 
     // TODO move to its own file?
