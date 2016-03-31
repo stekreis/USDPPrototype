@@ -10,17 +10,20 @@ import android.util.Log;
 /**
  * Created by kenny on 29.03.16.
  */
-public class AuthSif implements SensorEventListener {
+public class AuthSwbu implements SensorEventListener {
 
-    private final String LOGTAG = "AuthSif";
+    private final String LOGTAG = "AuthSwbu";
     private SensorManager sensorManager;
 
-    public AuthSif(Context ctx) {
+    private float[] accval = new float[10];
+    private int accPos = 0;
+
+    public AuthSwbu(Context ctx) {
         sensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
     }
 
-    public void stopSensor(){
+    public void stopSensor() {
         sensorManager.unregisterListener(this);
     }
 
@@ -36,6 +39,21 @@ public class AuthSif implements SensorEventListener {
             float ay = event.values[1];
             float az = event.values[2];
             Log.d(LOGTAG, ax + "/" + ay + "/" + az);
+            float totalAcc = Math.abs(ax) + Math.abs(ay) + Math.abs(az);
+            Log.d(LOGTAG, "" + totalAcc);
+
+            accval[accPos++] = totalAcc;
+            if (accPos >= accval.length) {
+                float max = 0;
+                for (int pos = 0; pos < accval.length; pos++) {
+                    if (accval[pos] > max) {
+                        max = accval[pos];
+                    }
+                }
+                Log.d(LOGTAG, "MAX: " + max);
+                accPos = 0;
+                accval = new float[accval.length];
+            }
         }
     }
 }

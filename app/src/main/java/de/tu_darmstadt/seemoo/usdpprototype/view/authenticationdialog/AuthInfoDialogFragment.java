@@ -3,7 +3,6 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
@@ -11,11 +10,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthSif;
-import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthSwbu;
 
 /**
  * Created by kenny on 15.02.16.
@@ -24,13 +21,13 @@ public class AuthInfoDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_INFOONLY = "AUTH_INFO_ONLY";
     private static final String LOGTAG = "AuthInfoDialogFrag";
-    AuthSif sif;
+    AuthSwbu sif;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(LOGTAG, "created");
-        sif = new AuthSif(getContext());
+        sif = new AuthSwbu(getContext());
     }
 
     @Override
