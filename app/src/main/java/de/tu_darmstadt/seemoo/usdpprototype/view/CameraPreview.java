@@ -7,6 +7,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by kenny on 27.03.16.
@@ -16,6 +18,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private static final String LOGTAG = "CameraPreview";
     private SurfaceHolder mHolder;
     private Camera mCamera;
+
+    private LinkedList<Integer> transmittedVal = new LinkedList<Integer>();
+
+
+    private long lastTime = 0;
 
 
     public CameraPreview(Context context, Camera camera) {
@@ -48,10 +55,39 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
         Log.d(LOGTAG, "brightness: " + total / totalCount);
         if (total / totalCount > 50) {
-            Log.d(LOGTAG, "white");
+
             return true;
         }
         return false;
+    }
+
+    private void checklight(byte[] data, int width) {
+        long time = System.currentTimeMillis();
+        if (ledBright(data, width)) {
+            if (lastTime == 0) {
+                lastTime = time;
+            } else {
+
+
+                Log.d(LOGTAG, "white");
+
+            }
+        } else {
+            if (lastTime == 0) {
+                // do not react yet
+            } else {
+                transmittedVal.add(getDigitFromTimeDifference(lastTime, time));
+                lastTime = 0;
+            }
+        }
+    }
+
+    private int getDigitFromTimeDifference(long lastTime, long time) {
+        long diff = time - lastTime;
+
+        int diffInt = (int) diff;
+        Log.d("digit", diffInt + "");
+        return diffInt;
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
@@ -60,11 +96,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             if (mCamera != null) {
                 mCamera.setDisplayOrientation(90);
                 mCamera.setPreviewDisplay(holder);
+                Camera.Parameters parameters = mCamera.getParameters();
+                List<String> focusModes = parameters.getSupportedFocusModes();
+                if (focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)) {
+                    parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+                    Log.d(LOGTAG, "using macro!");
+                }
+                mCamera.setParameters(parameters);
                 mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                     @Override
                     public void onPreviewFrame(byte[] data, Camera camera) {
                         //og.d(LOGTAG, "prevFormat " + camera.getParameters().getPreviewFormat());
-                        ledBright(data, camera.getParameters().getPreviewSize().width);
+                        checklight(data, camera.getParameters().getPreviewSize().width);
                     }
                 });
 

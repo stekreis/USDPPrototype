@@ -384,7 +384,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                         });
                 mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
 
-
+/*
                 ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 50);
 
                 if (toneGen.startTone(ToneGenerator.TONE_DTMF_1)) {
@@ -402,6 +402,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                 vib.vibrate(100);
+                */
             }
         });
 
