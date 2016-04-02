@@ -337,7 +337,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                 showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
 
                 // currently not supported(anim error as iv_blsib is not accessible
-                boolean[] pattern = {true, false, false, true, true, true, false, true, false, true, false, false, true};
+                boolean[] pattern = {false, false, false, true, false, true, true, false,  true, true, true};
                 showAuthBlSibDialogFragment(pattern);
 
                 //String phrase = "one, two, three, four, five, six, seven, eight, nine, ten";

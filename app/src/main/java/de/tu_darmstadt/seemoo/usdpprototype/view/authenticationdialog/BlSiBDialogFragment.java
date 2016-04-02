@@ -33,7 +33,7 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
     private final Runnable myRunnable = new Runnable() {
         public void run() {
             Log.d(LOGTAG, "running " + i);
-            if (pattern[i % pattern.length]) {
+            if (!pattern[i % pattern.length]) {
                 iv_blsib.setVisibility(View.VISIBLE);
             } else {
                 iv_blsib.setVisibility(View.INVISIBLE);
@@ -93,7 +93,7 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
             public void run() {
                 UpdateGUI();
             }
-        }, 0, 1000);
+        }, 0, 200);
     }
 
     @Override

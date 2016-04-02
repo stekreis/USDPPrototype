@@ -7,8 +7,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Created by kenny on 27.03.16.
@@ -37,33 +39,35 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
-    private boolean ledBright(byte[] data, int width) {
+    private boolean ledBright(byte[] data, int w, int h) {
 
-// TODO check if correctly addressed brightness
-        int yStride = (int) Math.ceil(width / 16.0) * 16;
-
+        byte[] luma = new byte[w * h];
+        byte[] chroma = new byte[w * h / 2];
+        System.arraycopy(data, 0, luma, 0, w * h);
+        System.arraycopy(data, w * h, chroma, 0, w * h / 2);
 
         int total = 0;
-        int totalCount = 0;
-        int yPos = yStride;
-        while (yPos < data.length) {
-            totalCount++;
-            total += data[yPos];
-            yPos += yStride;
+
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                int Y_at_x_y = luma[x + y * w];           // or data[x + y*w]
+                total += Y_at_x_y;
+            }
         }
 
-
-        Log.d(LOGTAG, "brightness: " + total / totalCount);
-        if (total / totalCount > 50) {
+        //Log.d(LOGTAG, "brightness: " + total);
+        if (total < 0) {
 
             return true;
         }
         return false;
+
+
     }
 
-    private void checklight(byte[] data, int width) {
+    private void checklight(byte[] data, int width, int height) {
         long time = System.currentTimeMillis();
-        if (ledBright(data, width)) {
+        if (ledBright(data, width, height)) {
             if (lastTime == 0) {
                 lastTime = time;
             } else {
@@ -84,37 +88,65 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private int getDigitFromTimeDifference(long lastTime, long time) {
         long diff = time - lastTime;
-
-        int diffInt = (int) diff;
+        int diffInt = Math.round(((float)diff)/200);
         Log.d("digit", diffInt + "");
         return diffInt;
     }
 
+    private void configCamera() {
+
+        Camera.Parameters parameters = mCamera.getParameters();
+
+        List<String> focusModes = parameters.getSupportedFocusModes();
+        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)) {
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+        }
+
+
+        List<Camera.Size> picSize = parameters.getSupportedPreviewSizes();
+        ListIterator<Camera.Size> liter = picSize.listIterator();
+        Camera.Size smallest = liter.next();
+        while (liter.hasNext()) {
+            Camera.Size curr = liter.next();
+            if (curr.width < smallest.width) {
+                smallest = curr;
+            }
+        }
+
+        //parameters.setPictureSize(smallest.width, smallest.height);
+        //parameters.setPictureSize(720, 480);
+        parameters.setPreviewSize(smallest.width, smallest.height);
+
+        Log.d("FLATTEN", parameters.flatten());
+
+        //parameters.setColorEffect(Camera.Parameters.EFFECT_MONO);
+        //parameters.setExposureCompensation(0);
+
+        // prevent camera from dynamically adapting brightness
+        if (parameters.isAutoExposureLockSupported()) {
+            parameters.setAutoExposureLock(true);
+        }
+
+        mCamera.setParameters(parameters);
+        mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+            @Override
+            public void onPreviewFrame(byte[] data, Camera camera) {
+                checklight(data, camera.getParameters().getPreviewSize().width,  mCamera.getParameters().getPreviewSize().height);
+            }
+        });
+
+    }
+
     public void surfaceCreated(SurfaceHolder holder) {
-        // The Surface has been created, now tell the camera where to draw the preview.
         try {
             if (mCamera != null) {
                 mCamera.setDisplayOrientation(90);
                 mCamera.setPreviewDisplay(holder);
-                Camera.Parameters parameters = mCamera.getParameters();
-                List<String> focusModes = parameters.getSupportedFocusModes();
-                if (focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO)) {
-                    parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-                    Log.d(LOGTAG, "using macro!");
-                }
-                mCamera.setParameters(parameters);
-                mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-                    @Override
-                    public void onPreviewFrame(byte[] data, Camera camera) {
-                        //og.d(LOGTAG, "prevFormat " + camera.getParameters().getPreviewFormat());
-                        checklight(data, camera.getParameters().getPreviewSize().width);
-                    }
-                });
-
+                configCamera();
                 mCamera.startPreview();
             }
         } catch (IOException e) {
-            Log.d(LOGTAG, "Error setting camera preview: " + e.getMessage());
+            Log.d(LOGTAG, e.getMessage());
         }
     }
 
@@ -130,7 +162,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         // If your preview can change or rotate, take care of those events here.
         // Make sure to stop the preview before resizing or reformatting it.
-
+/*
         if (mHolder.getSurface() == null) {
             // preview surface does not exist
             return;
@@ -152,7 +184,9 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.startPreview();
 
         } catch (Exception e) {
-            Log.d(LOGTAG, "Error starting camera preview: " + e.getMessage());
+            Log.d(LOGTAG, e.getMessage());
         }
+
+    */
     }
 }
