@@ -3,7 +3,6 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
@@ -12,16 +11,13 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.view.CameraPreview;
-import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
+import de.tu_darmstadt.seemoo.usdpprototype.view.CameraSurfaceView;
 
 /**
  * Created by kenny on 15.02.16.
@@ -97,7 +93,7 @@ public class CameraDialogFragment extends AuthDialogFragment {
         Camera cam = getCameraInstance();
         if(cam!= null) {
 
-            CameraPreview mPreview = new CameraPreview(getContext(), cam);
+            CameraSurfaceView mPreview = new CameraSurfaceView(getContext(), cam);
             FrameLayout preview = (FrameLayout) view.findViewById(R.id.camera_preview);
             preview.addView(mPreview);
         }else{
