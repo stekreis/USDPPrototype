@@ -8,16 +8,15 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.media.ToneGenerator;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -39,6 +38,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -47,11 +47,20 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.pitch.PitchDetectionHandler;
+import be.tarsos.dsp.pitch.PitchDetectionResult;
+import be.tarsos.dsp.pitch.PitchProcessor;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.NEWSimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
@@ -68,6 +77,8 @@ public class UsdpMainActivity extends AppCompatActivity {
 
     private static final String LOGTAG = "UsdpMainActivity";
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
+    MediaRecorder mRecorder;
+    String mFileName;
     private NfcAdapter mNfcAdapter;
     //UI
     private ListView lv_discoveredDevices;
@@ -79,10 +90,6 @@ public class UsdpMainActivity extends AppCompatActivity {
     private Messenger mService = null;
     private Intent bindServiceIntent;
     private boolean mBound;
-
-    private SensorManager sensorManager = null;
-    private Sensor lightSensor = null;
-    private float lightQuantity;
 
 
     /**
@@ -154,48 +161,8 @@ public class UsdpMainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
         initViewComponents();
-
-
-        //lightsensor();
     }
 
-    private void lightsensor() {
-        // Obtain references to the SensorManager and the Light Sensor
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-
-        // Implement a listener to receive updates
-        SensorEventListener listener = new SensorEventListener() {
-            boolean light = false;
-            long lastTimeMillis = 0;
-
-            @Override
-            public void onSensorChanged(SensorEvent event) {
-                lightQuantity = event.values[0];
-//                Log.d(LOGTAG, "licht: " + lightQuantity);
-                if (light && lightQuantity < 10) {
-                    Log.d(LOGTAG, "off");
-                    Log.d(LOGTAG, "time passed :" + (System.currentTimeMillis() - lastTimeMillis));
-                    light = false;
-                } else if (!light && lightQuantity > 80) {
-                    Log.d(LOGTAG, "on");
-                    Log.d(LOGTAG, "time passed :" + (System.currentTimeMillis() - lastTimeMillis));
-                    light = true;
-                }
-
-            }
-
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int accuracy) {
-                Log.d(LOGTAG, "accuracy changed");
-            }
-        };
-
-        // Register the listener with the light sensor -- choosing
-        // one of the SensorManager.SENSOR_DELAY_* constants.
-        sensorManager.registerListener(
-                listener, lightSensor, SensorManager.SENSOR_DELAY_UI);
-    }
 
     private void showAuthCamDialogFragment(String phrase) {
         authDialog = new CameraDialogFragment();
@@ -284,6 +251,31 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    private void startRecording() {
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setOutputFile(mFileName);
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        Log.d(LOGTAG, mFileName);
+        try {
+            mRecorder.prepare();
+        } catch (IOException e) {
+
+            Log.e(LOGTAG, "prepare() failed");
+        }
+
+        mRecorder.start();
+    }
+
+    private void record() {
+        mRecorder = new MediaRecorder();
+        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
+        mFileName += "/record.3gp";
+
+        startRecording();
+    }
+
     @SuppressWarnings("deprecation")
     private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -294,6 +286,17 @@ public class UsdpMainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG, et_authtext.getText().toString()));
+                mRecorder.stop();
+                mRecorder.release();
+                mRecorder = null;
+                MediaPlayer mPlayer = new MediaPlayer();
+                try {
+                    mPlayer.setDataSource(mFileName);
+                    mPlayer.prepare();
+                    mPlayer.start();
+                } catch (IOException e) {
+                    Log.e(LOGTAG, "prepare() failed");
+                }
             }
         });
 
@@ -337,7 +340,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                 showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
 
                 // currently not supported(anim error as iv_blsib is not accessible
-                boolean[] pattern = {false, false, false, true, false, true, true, false,  true, true, true};
+                boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
                 showAuthBlSibDialogFragment(pattern);
 
                 //String phrase = "one, two, three, four, five, six, seven, eight, nine, ten";
@@ -384,25 +387,88 @@ public class UsdpMainActivity extends AppCompatActivity {
                         });
                 mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
 
-/*
-                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 50);
 
-                if (toneGen.startTone(ToneGenerator.TONE_DTMF_1)) {
+                NEWSimpleMadlib nsml = new NEWSimpleMadlib();
+                nsml.parseWordlist(getApplicationContext());
 
-                    try {
-                        Thread.sleep(500);
-                        toneGen.stopTone();
-                        toneGen.startTone(ToneGenerator.TONE_DTMF_1);
-                        toneGen.stopTone();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
+
+                AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
+
+                PitchDetectionHandler pdh = new PitchDetectionHandler() {
+                    @Override
+                    public void handlePitch(PitchDetectionResult result, AudioEvent e) {
+                        final float pitchInHz = result.getPitch();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.d(LOGTAG, "pitch: " + pitchInHz);
+                                int code = -1;
+
+    /*
+    610
+    * */
+
+    /*
+    * 600/630
+    * 650/690
+    * 710/740
+    * 1200/1230
+    * 1300/1350
+    * 1470/1490
+    * 400/420
+    * 1300/1350
+    * 740/770
+    * 770/790
+    * */
+                                if (pitchInHz > 600 && pitchInHz < 630) {
+                                    code = 1;
+                                } else if (pitchInHz > 660 && pitchInHz < 680) {
+                                    code = 2;
+                                } else if (pitchInHz > 730 && pitchInHz < 750) {
+                                    code = 3;
+                                } else if (pitchInHz > 400 && pitchInHz < 420) {
+                                    code = 4;
+                                } else if (pitchInHz > 430 && pitchInHz < 450) {
+                                    code = 5;
+                                } else if (pitchInHz > 750 && pitchInHz < 770) {
+                                    code = 6;
+                                } else if (pitchInHz > 400 && pitchInHz < 420) {
+                                    code = 7;
+                                } else if (pitchInHz > 430 && pitchInHz < 450) {
+                                    code = 8;
+                                } else if (pitchInHz > 750 && pitchInHz < 770) {
+                                    code = 9;
+                                } else if (pitchInHz > 790 && pitchInHz < 810) {
+                                    code = 10;
+                                }
+                                Log.d(LOGTAG, "code: " + code + "\t" + pitchInHz);
+                            }
+                        });
                     }
-                }
+                };
+                AudioProcessor p = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
+                dispatcher.addAudioProcessor(p);
+                new Thread(dispatcher, "Audio Dispatcher").start();
 
+
+        //        playSound(toneGen, ToneGenerator.TONE_DTMF_1);
+          //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
+               playSound(toneGen, ToneGenerator.TONE_DTMF_3);
+              /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_5);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_6);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_7);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_8);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_9);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_A);
+*/
+
+                //record();
 
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                 vib.vibrate(100);
-                */
             }
         });
 
@@ -461,6 +527,19 @@ public class UsdpMainActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+
+    private void playSound(ToneGenerator toneGen, int toneType) {
+        if (toneGen.startTone(toneType)) {
+            try {
+                Thread.sleep(1000);
+                toneGen.stopTone();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @Override

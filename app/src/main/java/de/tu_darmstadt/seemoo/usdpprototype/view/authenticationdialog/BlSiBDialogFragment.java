@@ -93,6 +93,7 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
             public void run() {
                 UpdateGUI();
             }
+            // TODO change transmission value (200 ms dark between codes, 200/250/300/.. bright, 400 dark before sequence)
         }, 0, 200);
     }
 

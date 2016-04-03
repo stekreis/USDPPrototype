@@ -75,6 +75,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     // resolve authentication digit by duration of bright interval
     private int getDigitFromTimeDiff(long lastTime, long time) {
         long diff = time - lastTime;
+
         int diffInt = Math.round(((float) diff) / 200);
         Log.d("digit", diffInt + "");
         return diffInt;
