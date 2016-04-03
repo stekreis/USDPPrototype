@@ -15,12 +15,12 @@ public class AuthSwbu implements SensorEventListener {
     private final String LOGTAG = "AuthSwbu";
     private SensorManager sensorManager;
 
-    private float[] accval = new float[10];
+    private float[] accval = new float[5];
     private int accPos = 0;
 
     public AuthSwbu(Context ctx) {
         sensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public void stopSensor() {
@@ -40,8 +40,6 @@ public class AuthSwbu implements SensorEventListener {
             float az = event.values[2];
 
 
-
-            /*
             Log.d(LOGTAG, ax + "/" + ay + "/" + az);
             float totalAcc = Math.abs(ax) + Math.abs(ay) + Math.abs(az);
             Log.d(LOGTAG, "" + totalAcc);
@@ -58,9 +56,10 @@ public class AuthSwbu implements SensorEventListener {
                 accPos = 0;
                 accval = new float[accval.length];
             }
-            */
-        }if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
-            Log.d("XVAL",event.values[0] + "");
+
+        }
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+            Log.d("XVAL", event.values[0] + "");
             //Log.d("YVAL",event.values[0] + "");
             //Log.d("ZVAL",event.values[0] + "");
         }

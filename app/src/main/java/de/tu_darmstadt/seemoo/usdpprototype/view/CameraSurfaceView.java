@@ -38,11 +38,11 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
     private boolean ledBright(byte[] data, int w, int h) {
         int total = 0;
-        int size = w*h;
+        int size = w * h;
 
         // first two thirds of NV21 (YUV420) color space data is Y (luminance)
         for (int x = 0; x < size; x++) {
-                total += data[x];
+            total += data[x];
         }
 
         //Log.d(LOGTAG, "brightness: " + total);

@@ -38,7 +38,6 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -158,6 +157,10 @@ public class UsdpMainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+            /*
+
+* @startuml
+*/
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
         initViewComponents();
@@ -391,7 +394,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                 NEWSimpleMadlib nsml = new NEWSimpleMadlib();
                 nsml.parseWordlist(getApplicationContext());
 
-
                 ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
 
                 AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
@@ -453,9 +455,9 @@ public class UsdpMainActivity extends AppCompatActivity {
                 new Thread(dispatcher, "Audio Dispatcher").start();
 
 
-        //        playSound(toneGen, ToneGenerator.TONE_DTMF_1);
-          //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
-               playSound(toneGen, ToneGenerator.TONE_DTMF_3);
+                //        playSound(toneGen, ToneGenerator.TONE_DTMF_1);
+                //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_3);
               /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
                 playSound(toneGen, ToneGenerator.TONE_DTMF_5);
                 playSound(toneGen, ToneGenerator.TONE_DTMF_6);
