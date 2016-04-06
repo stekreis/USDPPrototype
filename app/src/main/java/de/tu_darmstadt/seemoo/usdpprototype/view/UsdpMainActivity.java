@@ -38,6 +38,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -50,16 +51,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.AudioProcessor;
-import be.tarsos.dsp.io.android.AudioDispatcherFactory;
-import be.tarsos.dsp.pitch.PitchDetectionHandler;
-import be.tarsos.dsp.pitch.PitchDetectionResult;
-import be.tarsos.dsp.pitch.PitchProcessor;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.NEWSimpleMadlib;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBDataVCI_I;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
@@ -68,6 +64,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.ButtonDial
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CameraDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.AsymmetricIdenticon;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
 //import android.app.FragmentManager;
@@ -82,9 +79,12 @@ public class UsdpMainActivity extends AppCompatActivity {
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
-    private ArrayList<String> valueList = new ArrayList<>();
+    private ArrayList<String> devList = new ArrayList<>();
     private EditText et_authtext;
     private AuthDialogFragment authDialog;
+    private Spinner sp_authmechs;
+    private ArrayAdapter spa_authmechs;
+    private ArrayList<String> mechList = new ArrayList<>();
     // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
@@ -155,17 +155,13 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-            /*
-
-* @startuml
-*/
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
         initViewComponents();
     }
-
 
     private void showAuthCamDialogFragment(String phrase) {
         authDialog = new CameraDialogFragment();
@@ -242,7 +238,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
-
     private void showBtnDialogFragment() {
         authDialog = new ButtonDialogFragment();
         Bundle bundle = new Bundle();
@@ -289,19 +284,38 @@ public class UsdpMainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG, et_authtext.getText().toString()));
-                mRecorder.stop();
-                mRecorder.release();
-                mRecorder = null;
-                MediaPlayer mPlayer = new MediaPlayer();
-                try {
-                    mPlayer.setDataSource(mFileName);
-                    mPlayer.prepare();
-                    mPlayer.start();
-                } catch (IOException e) {
-                    Log.e(LOGTAG, "prepare() failed");
+
+/*                try {
+                    Toast.makeText(UsdpMainActivity.this, toMD5("hallo".getBytes("UTF-8")), Toast.LENGTH_SHORT).show();
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }*/
+
+                if (mRecorder != null) {
+                    mRecorder.stop();
+                    mRecorder.release();
+                    mRecorder = null;
+                    MediaPlayer mPlayer = new MediaPlayer();
+                    try {
+                        mPlayer.setDataSource(mFileName);
+                        mPlayer.prepare();
+                        mPlayer.start();
+                    } catch (IOException e) {
+                        Log.e(LOGTAG, "prepare() failed");
+                    }
                 }
             }
         });
+
+        sp_authmechs = (Spinner) findViewById(R.id.sp_authmechs);
+        mechList = new ArrayList<String>();
+        mechList.add("test1");
+        mechList.add("test2");
+
+        spa_authmechs = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mechList);
+        spa_authmechs.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sp_authmechs.setAdapter(spa_authmechs);
+
 
         // UI
         Button btn_discover = (Button) findViewById(R.id.btn_discover);
@@ -329,7 +343,8 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        final Identicon identicon = (Identicon) findViewById(R.id.identicon);
+
+        // final Identicon identicon = (Identicon) findViewById(R.id.identicon);
         //identicon.show("jet fuel");
 
 
@@ -339,32 +354,29 @@ public class UsdpMainActivity extends AppCompatActivity {
         btn_auth.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO uncomment
-                showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
+                //showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
 
                 // currently not supported(anim error as iv_blsib is not accessible
                 boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
-                showAuthBlSibDialogFragment(pattern);
+                //  showAuthBlSibDialogFragment(pattern);
 
                 //String phrase = "one, two, three, four, five, six, seven, eight, nine, ten";
                 //showAuthVicPDialogFragment(phrase);
 
-
+                final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
                 String testtext = et_authtext.getText().toString();
-                identicon.show(testtext);
-
 
                 Bitmap bm = identicon.getBitmap(testtext);
                 showAuthVicIDialogFragment(bm);
 
-                showAuthVicPDialogFragment(testtext);
+               /* showAuthVicPDialogFragment(testtext);
 
                 showAuthCamDialogFragment(testtext);
 
                 showBtnDialogFragment();
 
                 showAuthInfoDialogFragment("shakeshake");
-
+*/
 
                 //fNFC
                 mNfcAdapter = NfcAdapter.getDefaultAdapter(UsdpMainActivity.this);
@@ -390,12 +402,10 @@ public class UsdpMainActivity extends AppCompatActivity {
                         });
                 mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
 
-
                 NEWSimpleMadlib nsml = new NEWSimpleMadlib();
                 nsml.parseWordlist(getApplicationContext());
 
-                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
-
+/*
                 AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
 
                 PitchDetectionHandler pdh = new PitchDetectionHandler() {
@@ -423,7 +433,7 @@ public class UsdpMainActivity extends AppCompatActivity {
     * 1300/1350
     * 740/770
     * 770/790
-    * */
+    * *//*
                                 if (pitchInHz > 600 && pitchInHz < 630) {
                                     code = 1;
                                 } else if (pitchInHz > 660 && pitchInHz < 680) {
@@ -453,11 +463,12 @@ public class UsdpMainActivity extends AppCompatActivity {
                 AudioProcessor p = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
                 dispatcher.addAudioProcessor(p);
                 new Thread(dispatcher, "Audio Dispatcher").start();
+*/
 
-
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
                 //        playSound(toneGen, ToneGenerator.TONE_DTMF_1);
                 //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_3);
+                //playSound(toneGen, ToneGenerator.TONE_DTMF_3);
               /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
                 playSound(toneGen, ToneGenerator.TONE_DTMF_5);
                 playSound(toneGen, ToneGenerator.TONE_DTMF_6);
@@ -468,6 +479,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 */
 
                 //record();
+
 
                 Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                 vib.vibrate(100);
@@ -484,6 +496,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                     bindService(bindServiceIntent, mConnection,
                             Context.BIND_AUTO_CREATE);
+
                 } else {
                     if (mBound) {
                         unbindService(mConnection);
@@ -493,9 +506,9 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        valueList.add("Discovered devices");
+        devList.add("Discovered devices");
 
-        la_discoveredDevices = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, valueList);
+        la_discoveredDevices = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, devList);
         lv_discoveredDevices = (ListView) findViewById(R.id.lv_discoveredDev);
         lv_discoveredDevices.setAdapter(la_discoveredDevices);
         lv_discoveredDevices.setBackgroundColor(Color.BLUE);
@@ -530,7 +543,6 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
     }
-
 
     private void playSound(ToneGenerator toneGen, int toneType) {
         if (toneGen.startTone(toneType)) {
@@ -576,10 +588,14 @@ public class UsdpMainActivity extends AppCompatActivity {
      * @param msg message to send
      */
     private void sendMsgtoService(Message msg) {
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+        if (mService != null) {
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else {
+            Toast.makeText(UsdpMainActivity.this, "start Service first", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -672,6 +688,23 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    private void manageAuthenticationDialog(OOBData oobData) {
+        switch (oobData.getType()) {
+            case OOBData.VCI_I:
+                OOBDataVCI_I oobVCI_i = (OOBDataVCI_I) oobData;
+                final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
+                Bitmap bm = identicon.getBitmap(oobVCI_i.getAuthText());
+                showAuthVicIDialogFragment(bm);
+                break;
+            case OOBData.VCI_N:
+                break;
+            case "VCI_P":
+                break;
+            case "SiB":
+                break;
+        }
+    }
+
     // TODO move to its own file?
     public interface MessageTarget {
         public Handler getHandler();
@@ -689,11 +722,21 @@ public class UsdpMainActivity extends AppCompatActivity {
                     Toast.makeText(UsdpMainActivity.this, "service said hello!", Toast.LENGTH_SHORT).show();
                     break;
                 case UsdpService.MSG_PEERSDISCOVERED:
-                    valueList.clear();
-
-                    valueList.addAll((List<String>) msg.obj);
+                    devList.clear();
+                    devList.addAll((List<String>) msg.obj);
                     //addDeviceNames();
                     la_discoveredDevices.notifyDataSetChanged();
+                    //TODO move sendmsg somewhere more appropriate
+                    sendMsgtoService(Message.obtain(null, UsdpService.MSG_AUTHMECHS));
+                    break;
+                case UsdpService.MSG_AUTHMECHS:
+                    mechList.clear();
+                    mechList.addAll((List<String>) msg.obj);
+                    spa_authmechs.notifyDataSetChanged();
+                    break;
+                case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
+                    manageAuthenticationDialog((OOBData) msg.obj);
+
                     break;
                 case UsdpService.MSG_CHATMSGRECEIVED:
                     Toast.makeText(UsdpMainActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();

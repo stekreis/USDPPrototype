@@ -31,8 +31,8 @@ import java.security.MessageDigest;
 abstract public class Identicon extends View {
 
     private static final String HASH_ALGORITHM = "SHA-256";
-    private final int mRowCount;
-    private final int mColumnCount;
+    private int mRowCount;
+    private int mColumnCount;
     private final Paint mPaint;
     private volatile int mCellWidth;
     private volatile int mCellHeight;
@@ -211,7 +211,11 @@ abstract public class Identicon extends View {
     }
 
     public Bitmap getBitmap(String input) {
-        //TODO remove show() / improve structure. create Bitmap without Identicon
+        //TODO remove show() / improve structure
+        mColumnCount = 4;
+        mCellHeight = 36;
+        mCellWidth = 36;
+        mRowCount = 4;
         show(input);
         Bitmap bm = Bitmap.createBitmap(mColumnCount * mCellWidth, mRowCount * mCellHeight, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bm);

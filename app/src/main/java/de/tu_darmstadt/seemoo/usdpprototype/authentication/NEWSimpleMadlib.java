@@ -29,7 +29,7 @@ public class NEWSimpleMadlib {
         return stc.trim();
     }
 
-    public String getWord(byte pos) {
+    public String getWord(int pos) {
         return words[pos];
     }
 

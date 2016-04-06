@@ -34,7 +34,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthManaIV;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
@@ -81,7 +82,11 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_SENDCHATMSG = 12;
     public static final int AUTH_INITMSG = 13;
     public static final int AUTH_BARCODE = 14;
+    public static final int MSG_AUTHMECHS = 15;
+    public static final int MSG_AUTHENTICATION_DIALOG_DATA = 16;
+    private static final int MSG_CHOSEN_AUTHMECH = 17;
     final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
+    private final String LOGTAG = "UsdpService";
     SecureAuthentication secureAuthentication = null;
     //TTStest
     TextToSpeech tts;
@@ -92,8 +97,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private WifiP2pManager.Channel mChannel;
     private Handler handler = new Handler(this);
     private Messenger activityMessenger;
-    private String LOGTAG = "UsdpService";
     private MessageManager messageManager;
+    private AuthMechManager authMechManager;
 
     /**
      * When binding to the service, we return an interface to our messenger
@@ -136,6 +141,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         Log.d(LOGTAG, "onCreate");
         Toast.makeText(this, "My Service Created", Toast.LENGTH_LONG).show(); //is shown
 
+        authMechManager = new AuthMechManager();
 
         // wifip2p logic
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
@@ -238,7 +244,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         statusTxtView.setVisibility(View.GONE);*/
     }
 
-
     private Bitmap generateQRCode(String input) {
         BitMatrix qrMatrix;
         QRCodeWriter writer = new QRCodeWriter();
@@ -267,6 +272,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         return mBitmap;
     }
 
+    /*
+    handles incoming messages from other device forwarded by MessageManager
+     */
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
@@ -304,7 +312,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     default:
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 0, msg.arg1));
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 1, msg.arg1));
-                        talk(new String((byte[])msg.obj,0,msg.arg1));
+                        talk(new String((byte[]) msg.obj, 0, msg.arg1));
                 }
                 break;
             default:
@@ -327,6 +335,15 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 case MSG_SAY_HELLO:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: hello!", Toast.LENGTH_SHORT).show();
                     break;
+
+                case MSG_CHOSEN_AUTHMECH:
+                    // TODO check if authmech actually is possible
+
+                    break;
+                case MSG_AUTHMECHS:
+                    ArrayList<String> authMechs = new ArrayList<String>(Arrays.asList(authMechManager.getSupportedMechs()));
+                    Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, authMechs);
+                    sendMsgToActivity(authMechsMsg);
                 case MSG_REGISTER_CLIENT:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client registered", Toast.LENGTH_SHORT).show();
                     activityMessenger = msg.replyTo;
@@ -376,7 +393,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     break;
                 case MSG_PAIR:
                     if (secureAuthentication == null) {
-                        secureAuthentication = new SecAuthManaIV();
+                        secureAuthentication = new SecAuthVIC();
                         secureAuthentication.init();
                     }
                     int publicKey = secureAuthentication.getPublicDeviceKey();
@@ -385,8 +402,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     byte[] authMyPublicKey = ByteBuffer.allocate(4).putInt(publicKey).array();
 
                     if (messageManager != null) {
-                        //byte[] msg_type = {};
-                        //byte[] testmessage = "testmessage".getBytes();
                         byte[] testmessage = authMyPublicKey;
                         ByteBuffer target = ByteBuffer.allocate(testmessage.length + 1);
                         target.put(MessageManager.MSGTYPE_INAUTH);
@@ -402,7 +417,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     break;
                 case MSG_SENDCHATMSG:
                     if (messageManager != null) {
-                        String text = (String)msg.obj;
+                        String text = (String) msg.obj;
                         messageManager.write(text.getBytes());
                         //pushMessage("Me: " + chatLine.getText().toString());
                         talk(text);

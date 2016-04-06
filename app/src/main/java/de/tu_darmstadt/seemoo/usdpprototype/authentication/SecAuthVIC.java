@@ -2,6 +2,9 @@ package de.tu_darmstadt.seemoo.usdpprototype.authentication;
 
 import android.util.Log;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.AlgorithmParameterGenerator;
@@ -18,12 +21,12 @@ import javax.crypto.spec.DHPublicKeySpec;
 /**
  * Created by kenny on 08.02.16.
  */
-public class SecAuthManaIV extends SecureAuthentication {
+public class SecAuthVIC extends SecureAuthentication {
 
     public final static int pValue = 913247;
     public final static int gValue = 370934;
     private static int bitlength = 20;
-    private final String LOGTAG = "SecAuthManaIV";
+    private final String LOGTAG = "SecAuthVIC";
     private final int BITLENGTHMAX = 32;
     private BigInteger priv;
     private BigInteger pub;
@@ -60,6 +63,12 @@ public class SecAuthManaIV extends SecureAuthentication {
         BigInteger otherPublicVal = BigInteger.valueOf(othrPublicVal);
         return generatedKey = otherPublicVal.modPow(priv, pVal).intValue();
     }
+
+
+    public static String toMD5(byte[] convertible) {
+        return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
+    }
+
 
     public int getGeneratedKeyVal() {
         return generatedKey;

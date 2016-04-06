@@ -28,6 +28,10 @@
         android:layout_below="@+id/btn_discover"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
+<Spinner
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/sp_authmechs"></Spinner>
 
     <ToggleButton
         android:layout_width="wrap_content"
