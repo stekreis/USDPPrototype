@@ -4,4 +4,5 @@
     <string name="action_settings">Settings</string>
     <string name="btn_discover">Discover devices</string>
     <string name="btn_pair">Pair secure</string>
+    <string name="device_capabilities">Device capabilities</string>
 </resources>

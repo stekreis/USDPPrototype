@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.authentication;
+package de.tu_darmstadt.seemoo.usdpprototype.secondarychannel;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -10,15 +10,15 @@ import android.util.Log;
 /**
  * Created by kenny on 29.03.16.
  */
-public class AuthSwbu implements SensorEventListener {
+public class Swbu implements SensorEventListener {
 
-    private final String LOGTAG = "AuthSwbu";
+    private final String LOGTAG = "Swbu";
     private SensorManager sensorManager;
 
     private float[] accval = new float[5];
     private int accPos = 0;
 
-    public AuthSwbu(Context ctx) {
+    public Swbu(Context ctx) {
         sensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
     }

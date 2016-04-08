@@ -1,8 +1,10 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
@@ -53,7 +55,8 @@ import java.util.List;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.NEWSimpleMadlib;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBDataVCI_I;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
@@ -76,6 +79,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     MediaRecorder mRecorder;
     String mFileName;
     private NfcAdapter mNfcAdapter;
+
+    private DeviceCapabilities devCap = new DeviceCapabilities();
+
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
@@ -279,6 +285,54 @@ public class UsdpMainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+
+                switch (menuItem.getItemId()) {
+                    case R.id.action_settings:
+                        AlertDialog dialog;
+
+                        final CharSequence[] items = {"Camera", "Display", "Speaker", "Microphone", "Accelerometer", "NFC"};
+
+                        final boolean[] backup = devCap.getCapabilities().clone();
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(UsdpMainActivity.this);
+                        builder.setTitle("Choose functionality");
+                        builder.setMultiChoiceItems(items, devCap.getCapabilities(),
+                                new DialogInterface.OnMultiChoiceClickListener() {
+                                    // indexSelected contains the index of item (of which checkbox checked)
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int indexSelected,
+                                                        boolean isChecked) {
+                                        devCap.setCapability(indexSelected, isChecked);
+                                    }
+                                })
+                                // Set the action buttons
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int id) {
+                                    }
+                                })
+                                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        devCap.setCapabilities(backup);
+                                    }
+                                });
+
+                        dialog = builder.create();
+                        dialog.show();
+
+
+                        return true;
+                }
+
+                return false;
+            }
+        });
+
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -402,7 +456,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                         });
                 mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
 
-                NEWSimpleMadlib nsml = new NEWSimpleMadlib();
+                SimpleMadlib nsml = new SimpleMadlib();
                 nsml.parseWordlist(getApplicationContext());
 
 /*
@@ -524,6 +578,8 @@ public class UsdpMainActivity extends AppCompatActivity {
                 WifiP2pDevice device = discoveredDevicesComplete.get(deviceText);
                 */
                 // end TODO
+
+
                 String deviceMac = lv_discoveredDevices.getAdapter().getItem(position).toString();
                 Log.d(LOGTAG, "DEVICEMAC: " + deviceMac);
                 Message msg = Message.obtain(null, UsdpService.MSG_CONNECT, deviceMac);
@@ -726,13 +782,36 @@ public class UsdpMainActivity extends AppCompatActivity {
                     devList.addAll((List<String>) msg.obj);
                     //addDeviceNames();
                     la_discoveredDevices.notifyDataSetChanged();
-                    //TODO move sendmsg somewhere more appropriate
-                    sendMsgtoService(Message.obtain(null, UsdpService.MSG_AUTHMECHS));
+
                     break;
                 case UsdpService.MSG_AUTHMECHS:
-                    mechList.clear();
-                    mechList.addAll((List<String>) msg.obj);
-                    spa_authmechs.notifyDataSetChanged();
+                    //mechList.clear();
+                    //mechList.addAll((List<String>) msg.obj);
+                    //spa_authmechs.notifyDataSetChanged();
+
+
+                    AlertDialog.Builder authMechDialog = new AlertDialog.Builder(UsdpMainActivity.this);
+                    authMechDialog.setTitle("Choose authentication mechanism");
+                    final String[] types = (String[]) msg.obj;
+                    authMechDialog.setItems(types, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            dialog.dismiss();
+                            Log.d(LOGTAG, types[which] + " was chosen");
+                            Toast.makeText(UsdpMainActivity.this, types[which] + " was chosen", Toast.LENGTH_SHORT).show();
+                            switch (which) {
+                                case 0:
+                                    //showAuthCamDialogFragment(types[0]);
+                                    break;
+                                case 1:
+                                    Log.d(LOGTAG, "test1");
+                                    break;
+                            }
+                        }
+
+                    });
+                    authMechDialog.show();
                     break;
                 case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
                     manageAuthenticationDialog((OOBData) msg.obj);

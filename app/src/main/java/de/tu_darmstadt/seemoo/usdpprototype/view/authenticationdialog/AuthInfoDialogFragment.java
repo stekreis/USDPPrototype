@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthSwbu;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.Swbu;
 
 /**
  * Created by kenny on 15.02.16.
@@ -21,13 +21,13 @@ public class AuthInfoDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_INFOONLY = "AUTH_INFO_ONLY";
     private static final String LOGTAG = "AuthInfoDialogFrag";
-    AuthSwbu sif;
+    Swbu sif;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(LOGTAG, "created");
-        sif = new AuthSwbu(getContext());
+        sif = new Swbu(getContext());
     }
 
     @Override

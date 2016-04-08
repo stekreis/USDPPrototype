@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.authentication;
+package de.tu_darmstadt.seemoo.usdpprototype.secondarychannel;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -14,10 +14,10 @@ import java.util.ListIterator;
 /**
  * Created by kenny on 29.03.16.
  */
-public class NEWSimpleMadlib {
+public class SimpleMadlib {
 
     public static final int WORDLIST_LENGTH = 1024;
-    private static final String LOGTAG = "NEWSimpleMadlib";
+    private static final String LOGTAG = "SimpleMadlib";
     private final String[] words = new String[WORDLIST_LENGTH];
 
     public static String getSentence(List<Integer> numlist) {

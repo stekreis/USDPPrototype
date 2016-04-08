@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ListIterator;
 import java.util.Locale;
 
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
@@ -330,7 +331,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
      */
     class InternalMsgIncomingHandler extends Handler {
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(final Message msg) {
             switch (msg.what) {
                 case MSG_SAY_HELLO:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: hello!", Toast.LENGTH_SHORT).show();
@@ -341,9 +342,10 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                     break;
                 case MSG_AUTHMECHS:
-                    ArrayList<String> authMechs = new ArrayList<String>(Arrays.asList(authMechManager.getSupportedMechs()));
+             /*       String[] authMechs = authMechManager.getSupportedMechs();
                     Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, authMechs);
-                    sendMsgToActivity(authMechsMsg);
+                    sendMsgToActivity(authMechsMsg);*/
+                    break;
                 case MSG_REGISTER_CLIENT:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client registered", Toast.LENGTH_SHORT).show();
                     activityMessenger = msg.replyTo;
@@ -373,23 +375,74 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     });
                     break;
                 case MSG_CONNECT:
-                    WifiP2pDevice device = discoveredDevices.get(msg.obj.toString());
-                    if (device != null) {
-                        WifiP2pConfig config = new WifiP2pConfig();
-                        config.deviceAddress = device.deviceAddress;
-                        wifiP2pManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+                    final String connDevAddr = msg.obj.toString();
+                    WifiP2pDevice dev = discoveredDevices.get(connDevAddr);
+                    if (dev != null) {
+                        switch (dev.status) {
+                            case WifiP2pDevice.AVAILABLE:
+                                // if available, just connect
+                                Toast.makeText(getApplicationContext(), "connecting to device", Toast.LENGTH_SHORT).show();
+                                if (dev != null) {
+                                    WifiP2pConfig config = new WifiP2pConfig();
+                                    config.deviceAddress = dev.deviceAddress;
+                                    wifiP2pManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
-                            @Override
-                            public void onSuccess() {
-                                Log.d(LOGTAG, "success");
-                            }
+                                        @Override
+                                        public void onSuccess() {
+                                            Log.d(LOGTAG, "success");
+                                        }
 
-                            @Override
-                            public void onFailure(int reason) {
-                                Log.d(LOGTAG, "failure");
-                            }
-                        });
+                                        // TODO: pair
+                                        @Override
+                                        public void onFailure(int reason) {
+                                            Log.d(LOGTAG, "failure");
+                                        }
+                                    });
+                                }
+                                break;
+                            case WifiP2pDevice.CONNECTED:
+                                // TODO
+                                //if connected, pair
+                                Toast.makeText(getApplicationContext(), "pairing in progress...", Toast.LENGTH_SHORT).show();
+
+                                String[] authMechs = authMechManager.getSupportedMechs();
+                                Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, authMechs);
+                                sendMsgToActivity(authMechsMsg);
+
+                                break;
+                            case WifiP2pDevice.INVITED:
+                                Toast.makeText(getApplicationContext(), "other device already invited...", Toast.LENGTH_SHORT).show();
+                                //do nothing
+                                break;
+                        }
                     }
+          /*          if (dev.deviceAddress.equals(connDevAddr)) {
+                        Log.d(LOGTAG, "device found! " + dev.deviceAddress + "state : " + dev.status);
+                    }else{
+                        Log.d(LOGTAG, "other peer found!: " + dev.deviceAddress + "state : " + dev.status);
+                    }*/
+
+
+                    //check connection state of device
+
+                   /* int state;
+                    wifiP2pManager.requestPeers(mChannel, new WifiP2pManager.PeerListListener() {
+                        @Override
+                        public void onPeersAvailable(WifiP2pDeviceList peers) {
+
+                            ArrayList<WifiP2pDevice> peerlist = new ArrayList<WifiP2pDevice>(peers.getDeviceList());
+                            ListIterator<WifiP2pDevice> liter = peerlist.listIterator();
+                            while (liter.hasNext()) {
+                                WifiP2pDevice dev = liter.next();
+                                if (dev.deviceAddress.equals(connDevAddr)) {
+                                    Log.d(LOGTAG, "device found! " + dev.deviceAddress + "state : " + dev.status);
+                                }else{
+                                    Log.d(LOGTAG, "other peer found!: " + dev.deviceAddress + "state : " + dev.status);
+                                }
+                            }
+                        }
+                    });*/
+
                     break;
                 case MSG_PAIR:
                     if (secureAuthentication == null) {
