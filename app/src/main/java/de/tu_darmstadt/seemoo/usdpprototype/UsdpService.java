@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 
 import org.apache.commons.lang3.SerializationUtils;
@@ -46,6 +47,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBroadcastReceiver;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 //wifip2p
@@ -89,7 +91,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int AUTH_BARCODE = 14;
     public static final int MSG_AUTHMECHS = 15;
     public static final int MSG_AUTHENTICATION_DIALOG_DATA = 16;
-    private static final int MSG_CHOSEN_AUTHMECH = 17;
+    public static final int MSG_CHOSEN_AUTHMECH = 17;
+    public static final int MSG_CHOSEN_ROLE = 18;
     final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
     SecureAuthentication secureAuthentication = null;
@@ -105,6 +108,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private MessageManager messageManager;
     private AuthMechManager authMechManager;
     private DeviceCapabilities deviceCapabilities;
+
+    private UsdpPacket remoteDevice;
 
     /**
      * When binding to the service, we return an interface to our messenger
@@ -324,12 +329,40 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     case MessageManager.MSGTYPE_POSTAUTH:
                         Log.d(LOGTAG, "postauth");
                         break;
-                    case MessageManager.MSGTYPE_FIRSTCONTACT:
+                    case MessageManager.MSGTYPE_HELLO:
+                        Log.d(LOGTAG, "kokett will be sent");
+                        if (messageManager != null) {
+                            String[] supRecMechs = authMechManager.getSupportedRecMechs(deviceCapabilities.getValidCapabilities());
+                            String[] supSendMechs = authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities());
+                            byte[] data = SerializationUtils.serialize(new UsdpPacket(supRecMechs, supSendMechs));
+                            ByteBuffer target = ByteBuffer.allocate(data.length + 1);
+                            target.put(MessageManager.MSGTYPE_HELLOBACK);
+                            target.put(data);
+
+                            messageManager.write(target.array());
+                            Log.d(LOGTAG, "kokett sent");
+                        }
+                        break;
+                    case MessageManager.MSGTYPE_HELLOBACK:
                         byte[] recData = (byte[]) msg.obj;
                         byte[] data = new byte[recData.length - 1];
                         System.arraycopy(recData, 1, data, 0, recData.length - 1);
-                        ArrayList<String> yourObject = (ArrayList<String>) SerializationUtils.deserialize(data);
-                        Log.d(LOGTAG, "chustcheckin " + yourObject.get(1));
+                        UsdpPacket prettyData = (UsdpPacket) SerializationUtils.deserialize(data);
+
+                        remoteDevice = prettyData;
+
+                        HashSet<String> res = new HashSet<>();
+
+                        authMechManager.findComp(res, prettyData.getMechsSend(), authMechManager.getSupportedRecMechs(deviceCapabilities.getValidCapabilities()));
+                        authMechManager.findComp(res, prettyData.getMechsRec(), authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities()));
+                        String[] resRay = res.toArray(new String[res.size()]);
+
+                        //String[] authMechs = authMechManager.getSupportedMechs(deviceCapabilities.getValidCapabilities());
+                        Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, resRay);
+                        //TODO sort authmechs by secpoints
+                        sendMsgToActivity(authMechsMsg);
+
+                        Log.d(LOGTAG, "chustcheckin " + prettyData.getMechsRec()[0]);
                         break;
                     default:
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 0, msg.arg1));
@@ -339,6 +372,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 break;
             default:
         }
+
         return true;
     }
 
@@ -359,8 +393,49 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     break;
 
                 case MSG_CHOSEN_AUTHMECH:
-                    // TODO check if authmech actually is possible
-
+                    String[] supSendMechs = authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities());
+                    boolean matches = false;
+                    String authMechStr = (String) msg.obj;
+                    for (int pos = 0; pos < supSendMechs.length && !matches; pos++) {
+                        if (supSendMechs[pos].equals(authMechStr)) {
+                            String[] supRemoteRecMechs = remoteDevice.getMechsRec();
+                            for (int rpos = 0; rpos < supRemoteRecMechs.length && !matches; rpos++) {
+                                if (supRemoteRecMechs[rpos].equals(authMechStr)) {
+                                    matches = true;
+                                    Log.d(LOGTAG, "found match thissend");
+                                    //this device sends, remote device receives
+                                    OOBData data = new OOBData(authMechStr, "authdata", true);
+                                    Message retmsg = Message.obtain(null,
+                                            MSG_AUTHENTICATION_DIALOG_DATA, data);
+                                    sendMsgToActivity(retmsg);
+                                    //TODO inform other device to receive
+                                }
+                            }
+                        }
+                    }
+                    if (!matches) {
+                        String[] supRecMechs = authMechManager.getSupportedRecMechs(deviceCapabilities.getValidCapabilities());
+                        for (int pos = 0; pos < supRecMechs.length && !matches; pos++) {
+                            if (supRecMechs[pos].equals(authMechStr)) {
+                                String[] supRemoteSendMechs = remoteDevice.getMechsSend();
+                                for (int rpos = 0; rpos < supRemoteSendMechs.length && !matches; rpos++) {
+                                    if (supRemoteSendMechs[rpos].equals(authMechStr)) {
+                                        matches = true;
+                                        Log.d(LOGTAG, "found match thisreceive");
+                                        //remote device sends, this device receives
+                                        OOBData data = new OOBData(authMechStr, "authdata", false);
+                                        Message retmsg = Message.obtain(null,
+                                                MSG_AUTHENTICATION_DIALOG_DATA, data);
+                                        sendMsgToActivity(retmsg);
+                                        //TODO inform other device to send
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!matches) {
+                        // invalid
+                    }
                     break;
                 case MSG_AUTHMECHS:
              /*       String[] authMechs = authMechManager.getSupportedMechs();
@@ -424,28 +499,16 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                 }
                                 break;
                             case WifiP2pDevice.CONNECTED:
-                                // TODO
-                                //if connected, pair
-                                Toast.makeText(getApplicationContext(), "pairing in progress...", Toast.LENGTH_SHORT).show();
-
-
-                                String[] authMechs = authMechManager.getSupportedMechs(deviceCapabilities.getValidCapabilities());
-                                Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, authMechs);
-                                Log.d(LOGTAG, "kokett will be sent");
+                                // send first hello
                                 if (messageManager != null) {
-                                    ArrayList<String> test = new ArrayList<>();
-                                    test.add("kokett");
-                                    test.add("kokett23");
-                                    byte[] data = SerializationUtils.serialize(test);
+
+                                    byte[] data = SerializationUtils.serialize(new UsdpPacket("uniqueID", "protVersion1.0"));
                                     ByteBuffer target = ByteBuffer.allocate(data.length + 1);
-                                    target.put(MessageManager.MSGTYPE_FIRSTCONTACT);
+                                    target.put(MessageManager.MSGTYPE_HELLO);
                                     target.put(data);
-
                                     messageManager.write(target.array());
-                                    Log.d(LOGTAG, "kokett sent");
                                 }
-                                sendMsgToActivity(authMechsMsg);
-
+                                Toast.makeText(getApplicationContext(), "pairing in progress...", Toast.LENGTH_SHORT).show();
                                 break;
                             case WifiP2pDevice.INVITED:
                                 Toast.makeText(getApplicationContext(), "other device already invited...", Toast.LENGTH_SHORT).show();

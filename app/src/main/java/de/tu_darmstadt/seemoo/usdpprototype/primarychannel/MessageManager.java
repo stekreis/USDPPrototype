@@ -23,7 +23,8 @@ public class MessageManager implements Runnable {
     public static final byte MSGTYPE_PREAUTH = 1;
     public static final byte MSGTYPE_INAUTH = 2;
     public static final byte MSGTYPE_POSTAUTH = 3;
-    public static final byte MSGTYPE_FIRSTCONTACT = 4;
+    public static final byte MSGTYPE_HELLO = 4;
+    public static final byte MSGTYPE_HELLOBACK = 5;
 
     private Socket socket = null;
     private Handler handler;

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.ListIterator;
 
 /**
@@ -20,6 +22,15 @@ public class AuthMechManager {
 
     public AuthMechManager() {
 
+    }
+
+    public boolean isCapableOf(String mech) {
+        for (int pos = 0; pos < authmechs.length; pos++) {
+            if (authmechs[pos].equals(mech)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void readJsonStream(InputStream in) throws IOException {
@@ -151,5 +162,19 @@ public class AuthMechManager {
         }
         return null;
     }
+
+
+    public void findComp(HashSet<String> res, String[] first, String[] second) {
+        for (int firstPos = 0; firstPos < first.length; firstPos++) {
+            for (int secPos = 0; secPos < second.length; secPos++) {
+                String firstStr = first[firstPos];
+                if (firstStr.equals(second[secPos])) {
+                    res.add(firstStr);
+                }
+            }
+        }
+
+    }
+
 
 }

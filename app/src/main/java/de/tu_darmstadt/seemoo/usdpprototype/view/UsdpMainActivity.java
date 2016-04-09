@@ -56,9 +56,8 @@ import java.util.List;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBDataVCI_I;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
@@ -120,7 +119,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                 msg.replyTo = mMessenger;
                 mService.send(msg);
 
-                // Give it some value as an example.
                 msg = Message.obtain(null,
                         UsdpService.MSG_CONFIG, devCap);
                 mService.send(msg);
@@ -449,7 +447,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                                  * You can add it back in to guarantee that this
                                  * activity starts when receiving a beamed message. For now, this code
                                  * uses the tag dispatch system.
-                                 */
+                                */
                                 //,NdefRecord.createApplicationRecord("com.example.android.beam")
                         });
                 mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
@@ -744,10 +742,9 @@ public class UsdpMainActivity extends AppCompatActivity {
 
     private void manageAuthenticationDialog(OOBData oobData) {
         switch (oobData.getType()) {
-            case OOBData.VCI_I:
-                OOBDataVCI_I oobVCI_i = (OOBDataVCI_I) oobData;
+            case OOBData.VIC_I:
                 final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
-                Bitmap bm = identicon.getBitmap(oobVCI_i.getAuthText());
+                Bitmap bm = identicon.getBitmap(oobData.getAuthdata());
                 showAuthVicIDialogFragment(bm);
                 break;
             case OOBData.VCI_N:
@@ -798,20 +795,17 @@ public class UsdpMainActivity extends AppCompatActivity {
                             dialog.dismiss();
                             Log.d(LOGTAG, types[which] + " was chosen");
                             Toast.makeText(UsdpMainActivity.this, types[which] + " was chosen", Toast.LENGTH_SHORT).show();
-                            switch (which) {
-                                case 0:
-                                    //showAuthCamDialogFragment(types[0]);
-                                    break;
-                                case 1:
-                                    Log.d(LOGTAG, "test1");
-                                    break;
-                            }
+
+                            Message msg = Message.obtain(null,
+                                    UsdpService.MSG_CHOSEN_AUTHMECH, types[which]);
+                            sendMsgtoService(msg);
                         }
 
                     });
                     authMechDialog.show();
                     break;
                 case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
+                    Toast.makeText(UsdpMainActivity.this, "auth shows now", Toast.LENGTH_SHORT).show();
                     manageAuthenticationDialog((OOBData) msg.obj);
 
                     break;
