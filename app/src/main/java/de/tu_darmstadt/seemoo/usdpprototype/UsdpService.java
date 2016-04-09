@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -28,16 +29,17 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.ListIterator;
 import java.util.Locale;
 
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocketHandler;
@@ -73,7 +75,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
      * service to supply a new value, and will be sent by the service to
      * any registered clients with the new value.
      */
-    public static final int MSG_SET_VALUE = 3;
+    public static final int MSG_CONFIG = 3;
     public static final int MSG_TEST = 4;
     public static final int MSG_DISCOVERPEERS = 5;
     public static final int MSG_PEERSDISCOVERED = 6;
@@ -100,6 +102,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private Messenger activityMessenger;
     private MessageManager messageManager;
     private AuthMechManager authMechManager;
+    private DeviceCapabilities deviceCapabilities;
 
     /**
      * When binding to the service, we return an interface to our messenger
@@ -143,6 +146,15 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         Toast.makeText(this, "My Service Created", Toast.LENGTH_LONG).show(); //is shown
 
         authMechManager = new AuthMechManager();
+        AssetManager am = getApplicationContext().getAssets();
+        try {
+            InputStream is = am.open("authmechanisms.json");
+
+            authMechManager.readJsonStream(is);
+        } catch (IOException e) {
+            Log.e(LOGTAG, e.getMessage());
+        }
+
 
         // wifip2p logic
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
@@ -353,8 +365,10 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 case MSG_UNREGISTER_CLIENT:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client unregistered", Toast.LENGTH_SHORT).show();
                     break;
-                case MSG_SET_VALUE:
-                    Toast.makeText(getApplicationContext(), "ACTSEND, Service says: value set", Toast.LENGTH_SHORT).show();
+                case MSG_CONFIG:
+                    Toast.makeText(getApplicationContext(), "Service started. Device config transmitted", Toast.LENGTH_SHORT).show();
+                    deviceCapabilities = (DeviceCapabilities) msg.obj;
+
                     sendMsgToActivity(Message.obtain(null,
                             MSG_SAY_HELLO));
                     break;
@@ -405,7 +419,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                 //if connected, pair
                                 Toast.makeText(getApplicationContext(), "pairing in progress...", Toast.LENGTH_SHORT).show();
 
-                                String[] authMechs = authMechManager.getSupportedMechs();
+
+                                String[] authMechs = authMechManager.getSupportedMechs2(deviceCapabilities.getValidCapabilities());
                                 Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, authMechs);
                                 sendMsgToActivity(authMechsMsg);
 

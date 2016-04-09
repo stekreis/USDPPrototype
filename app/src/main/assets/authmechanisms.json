@@ -1,7 +1,153 @@
 {
-  "authmech": {
-    "name": "VIC-I",
-    "usedAuth": "MA-DH",
-    "secPoints": 8
+  "authmechs": {
+    "VIC-I": {
+      "name": "VIC-I",
+      "usedAuth": "MA-DH",
+      "secPoints": 8,
+      "reqCapSend": [
+        "display"
+      ],
+      "reqCapRec": [
+        "display"
+      ]
+    },
+    "VIC-N": {
+      "name": "VIC-N",
+      "usedAuth": "MA-DH",
+      "secPoints": 8,
+      "reqCapSend": [
+        "display"
+      ],
+      "reqCapRec": [
+        "display"
+      ]
+    },
+    "VIC-P": {
+      "name": "VIC-P",
+      "usedAuth": "MA-DH",
+      "secPoints": 8,
+      "reqCapSend": [
+        "display"
+      ],
+      "reqCapRec": [
+        "display"
+      ]
+    },
+    "SiB": {
+      "name": "SiB",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "display"
+      ],
+      "reqCapRec": [
+        "camera"
+      ]
+    },
+    "SiBBlink": {
+      "name": "SiBBlink",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "display"
+      ],
+      "reqCapRec": [
+        "camera"
+      ]
+    },
+    "LaCDS": {
+      "name": "LaCDS",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "display"
+      ],
+      "reqCapRec": [
+        "speaker"
+      ]
+    },
+    "LaCSS": {
+      "name": "LaCSS",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "speaker"
+      ],
+      "reqCapRec": [
+        "speaker"
+      ]
+    },
+    "BEDA_VB": {
+      "name": "BEDA_VB",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "vibration"
+      ],
+      "reqCapRec": [
+      ]
+    },
+    "BEDA_LB": {
+      "name": "BEDA_LB",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "led"
+      ],
+      "reqCapRec": [
+      ]
+    },
+    "BEDA_BPBT": {
+      "name": "BEDA_BPBT",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "speaker"
+      ],
+      "reqCapRec": [
+      ]
+    },
+    "BEDA_BTBT": {
+      "name": "BEDA_BTBT",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+      ],
+      "reqCapRec": [
+      ]
+    },
+    "HAPADEP": {
+      "name": "HAPADEP",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "speaker"
+      ],
+      "reqCapRec": [
+        "microphone"
+      ]
+    },
+    "NFC": {
+      "name": "NFC",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "nfc"
+      ],
+      "reqCapRec": [
+        "nfc"
+      ]
+    },
+    "SWBU": {
+      "name": "SWBU",
+      "usedAuth": "MA-DH",
+      "secPoints": 10,
+      "reqCapSend": [
+        "accelerometer"
+      ],
+      "reqCapRec": [
+        "accelerometer"
+      ]
+    }
   }
 }

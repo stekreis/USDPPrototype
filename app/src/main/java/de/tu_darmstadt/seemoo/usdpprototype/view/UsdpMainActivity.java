@@ -122,7 +122,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                 // Give it some value as an example.
                 msg = Message.obtain(null,
-                        UsdpService.MSG_SET_VALUE, this.hashCode(), 0);
+                        UsdpService.MSG_CONFIG, devCap);
                 mService.send(msg);
             } catch (RemoteException e) {
                 // In this case the service has crashed before we could even
@@ -293,7 +293,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     case R.id.action_settings:
                         AlertDialog dialog;
 
-                        final CharSequence[] items = {"Camera", "Display", "Speaker", "Microphone", "Accelerometer", "NFC"};
+                        final CharSequence[] items = DeviceCapabilities.capTitles;
 
                         final boolean[] backup = devCap.getCapabilities().clone();
 
@@ -323,7 +323,6 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                         dialog = builder.create();
                         dialog.show();
-
 
                         return true;
                 }
@@ -396,7 +395,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR));
             }
         });
-
 
         // final Identicon identicon = (Identicon) findViewById(R.id.identicon);
         //identicon.show("jet fuel");
