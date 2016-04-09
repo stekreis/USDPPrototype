@@ -19,7 +19,8 @@ public class DeviceCapabilities {
 
     public DeviceCapabilities() {
         for (int pos = 0; pos < deviceCaps.length; pos++) {
-            deviceCaps[pos] = false;
+            // by default, devices have full functionality
+            deviceCaps[pos] = true;
         }
     }
 

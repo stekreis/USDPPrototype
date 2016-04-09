@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.ListIterator;
 
 /**
@@ -17,11 +16,7 @@ import java.util.ListIterator;
  * manages available authentication mechanisms
  */
 public class AuthMechManager {
-
-    // TODO read from file. device may not support all mechanisms
-    private String[] authmechs = {"VCI_I", "VCI_N", "VCI_P", "SiB", "SiBBlink", "LACDS", "LACSS", "BEDA_VB", "BEDA_LB", "BEDA_BPB", "BEDA_BTB", "HAPADEP", "SWBU", "NFC"};
-
-    private AuthMechanism[] authmechs2;
+    private AuthMechanism[] authmechs;
 
     public AuthMechManager() {
 
@@ -37,17 +32,12 @@ public class AuthMechManager {
         ArrayList<AuthMechanism> authMechList = new ArrayList<AuthMechanism>();
 
         reader.beginObject();
-        Log.d("JSEONteost", reader.nextName());
+        reader.nextName();
         reader.beginObject();
-/*
-        Log.d("JSEONteost2", reader.nextName());
-*/
         authMechList = readMessage(reader);
-
-
         reader.endObject();
 
-        authmechs2 = authMechList.toArray(new AuthMechanism[authMechList.size()]);
+        authmechs = authMechList.toArray(new AuthMechanism[authMechList.size()]);
     }
 
     public ArrayList<AuthMechanism> readMessage(JsonReader reader) throws IOException {
@@ -64,11 +54,9 @@ public class AuthMechManager {
             shortName = reader.nextName();
             reader.beginObject();
             while (reader.hasNext()) {
-
                 name = reader.nextName();
                 if (name.equals("name")) {
                     longName = reader.nextString();
-                    Log.d("jseontseot", longName);
                 } else if (name.equals("usedAuth")) {
                     usedAuth = reader.nextString();
                 } else if (name.equals("secPoints")) {
@@ -80,13 +68,10 @@ public class AuthMechManager {
                 } else {
                     reader.skipValue();
                 }
-
             }
             reader.endObject();
             authMechList.add(new AuthMechanism(shortName, longName, usedAuth, secPoints, reqCapSend, reqCapRec));
         }
-
-
         reader.endObject();
         return authMechList;
     }
@@ -128,12 +113,12 @@ public class AuthMechManager {
     /*
     extract an array of supported authentication mechanisms based on the device capabilities
      */
-    public String[] getSupportedMechs2(String[] devCaps) {
-        if (authmechs2 != null) {
+    public String[] getSupportedMechs(String[] devCaps) {
+        if (authmechs != null) {
             ArrayList<String> supMechs = new ArrayList<String>();
-            for (int pos = 0; pos < authmechs2.length; pos++) {
-                if (fulfillsReq(authmechs2[pos].getReqCapSend(), devCaps) && fulfillsReq(authmechs2[pos].getReqCapRec(), devCaps)) {
-                    supMechs.add(authmechs2[pos].getShortName());
+            for (int pos = 0; pos < authmechs.length; pos++) {
+                if (fulfillsReq(authmechs[pos].getReqCapSend(), devCaps) && fulfillsReq(authmechs[pos].getReqCapRec(), devCaps)) {
+                    supMechs.add(authmechs[pos].getShortName());
                 }
             }
             return supMechs.toArray(new String[supMechs.size()]);
@@ -141,8 +126,30 @@ public class AuthMechManager {
         return null;
     }
 
-    public String[] getSupportedMechs() {
-        return authmechs;
+    public String[] getSupportedRecMechs(String[] devCaps) {
+        if (authmechs != null) {
+            ArrayList<String> supMechs = new ArrayList<String>();
+            for (int pos = 0; pos < authmechs.length; pos++) {
+                if (fulfillsReq(authmechs[pos].getReqCapRec(), devCaps)) {
+                    supMechs.add(authmechs[pos].getShortName());
+                }
+            }
+            return supMechs.toArray(new String[supMechs.size()]);
+        }
+        return null;
+    }
+
+    public String[] getSupportedSendMechs(String[] devCaps) {
+        if (authmechs != null) {
+            ArrayList<String> supMechs = new ArrayList<String>();
+            for (int pos = 0; pos < authmechs.length; pos++) {
+                if (fulfillsReq(authmechs[pos].getReqCapSend(), devCaps)) {
+                    supMechs.add(authmechs[pos].getShortName());
+                }
+            }
+            return supMechs.toArray(new String[supMechs.size()]);
+        }
+        return null;
     }
 
 }

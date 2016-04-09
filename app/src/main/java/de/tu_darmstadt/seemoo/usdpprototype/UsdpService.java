@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.apache.commons.lang3.SerializationUtils;
+
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
@@ -322,6 +324,13 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     case MessageManager.MSGTYPE_POSTAUTH:
                         Log.d(LOGTAG, "postauth");
                         break;
+                    case MessageManager.MSGTYPE_FIRSTCONTACT:
+                        byte[] recData = (byte[]) msg.obj;
+                        byte[] data = new byte[recData.length - 1];
+                        System.arraycopy(recData, 1, data, 0, recData.length - 1);
+                        ArrayList<String> yourObject = (ArrayList<String>) SerializationUtils.deserialize(data);
+                        Log.d(LOGTAG, "chustcheckin " + yourObject.get(1));
+                        break;
                     default:
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 0, msg.arg1));
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 1, msg.arg1));
@@ -420,8 +429,21 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                 Toast.makeText(getApplicationContext(), "pairing in progress...", Toast.LENGTH_SHORT).show();
 
 
-                                String[] authMechs = authMechManager.getSupportedMechs2(deviceCapabilities.getValidCapabilities());
+                                String[] authMechs = authMechManager.getSupportedMechs(deviceCapabilities.getValidCapabilities());
                                 Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, authMechs);
+                                Log.d(LOGTAG, "kokett will be sent");
+                                if (messageManager != null) {
+                                    ArrayList<String> test = new ArrayList<>();
+                                    test.add("kokett");
+                                    test.add("kokett23");
+                                    byte[] data = SerializationUtils.serialize(test);
+                                    ByteBuffer target = ByteBuffer.allocate(data.length + 1);
+                                    target.put(MessageManager.MSGTYPE_FIRSTCONTACT);
+                                    target.put(data);
+
+                                    messageManager.write(target.array());
+                                    Log.d(LOGTAG, "kokett sent");
+                                }
                                 sendMsgToActivity(authMechsMsg);
 
                                 break;
