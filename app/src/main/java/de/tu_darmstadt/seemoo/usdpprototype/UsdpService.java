@@ -93,6 +93,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_AUTHENTICATION_DIALOG_DATA = 16;
     public static final int MSG_CHOSEN_AUTHMECH = 17;
     public static final int MSG_CHOSEN_ROLE = 18;
+    public static final int MSG_AUTHENTICATION_DIALOG_DATA_REM = 19;
     final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
     SecureAuthentication secureAuthentication = null;
@@ -364,6 +365,14 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                         Log.d(LOGTAG, "chustcheckin " + prettyData.getMechsRec()[0]);
                         break;
+                    case MessageManager.MSGTYPE_AUTH_DIALOG:
+                        byte[] recAuthData = (byte[]) msg.obj;
+                        byte[] actualData = new byte[recAuthData.length - 1];
+                        System.arraycopy(recAuthData, 1, actualData, 0, recAuthData.length - 1);
+                        OOBData prettyData2 = (OOBData) SerializationUtils.deserialize(actualData);
+                        Message retmsg = Message.obtain(null,
+                                MSG_AUTHENTICATION_DIALOG_DATA, prettyData2);
+                        sendMsgToActivity(retmsg);
                     default:
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 0, msg.arg1));
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 1, msg.arg1));
@@ -409,6 +418,15 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                             MSG_AUTHENTICATION_DIALOG_DATA, data);
                                     sendMsgToActivity(retmsg);
                                     //TODO inform other device to receive
+                                    OOBData dataRemote = new OOBData(authMechStr, "authdata", false);
+                                    if (messageManager != null) {
+
+                                        byte[] dataRem = SerializationUtils.serialize(dataRemote);
+                                        ByteBuffer target = ByteBuffer.allocate(dataRem.length + 1);
+                                        target.put(MessageManager.MSGTYPE_AUTH_DIALOG);
+                                        target.put(dataRem);
+                                        messageManager.write(target.array());
+                                    }
                                 }
                             }
                         }

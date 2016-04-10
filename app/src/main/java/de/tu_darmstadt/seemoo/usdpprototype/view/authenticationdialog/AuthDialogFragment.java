@@ -9,7 +9,7 @@ import android.support.v4.app.DialogFragment;
  */
 public class AuthDialogFragment extends DialogFragment {
 
-    public static final String AUTH_BLSIB = "AUTH_BLSIB";
+    public static final String AUTH_BLSIBARRAY = "AUTH_BLSIBARRAY";
     public static final String AUTH_TITLE = "AUTH_TITLE";
     public static final String AUTH_INFO = "AUTH_INFO";
 

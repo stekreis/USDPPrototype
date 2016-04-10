@@ -61,7 +61,7 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
 
         iv_blsib = (ImageView) view.findViewById(R.id.iv_image);
         iv_blsib.setBackgroundColor(Color.LTGRAY);
-        pattern = bundle.getBooleanArray(AUTH_BLSIB);
+        pattern = bundle.getBooleanArray(AUTH_BLSIBARRAY);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override

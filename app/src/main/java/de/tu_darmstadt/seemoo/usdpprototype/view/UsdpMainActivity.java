@@ -53,6 +53,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.pitch.PitchDetectionHandler;
+import be.tarsos.dsp.pitch.PitchDetectionResult;
+import be.tarsos.dsp.pitch.PitchProcessor;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
@@ -94,6 +101,8 @@ public class UsdpMainActivity extends AppCompatActivity {
     private Messenger mService = null;
     private Intent bindServiceIntent;
     private boolean mBound;
+
+    private SimpleMadlib smplMadlib;
 
 
     /**
@@ -159,18 +168,25 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    private void init() {
+        smplMadlib = new SimpleMadlib();
+        smplMadlib.parseWordlist(getApplicationContext());
+        initViewComponents();
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usdp_main);
-        initViewComponents();
+
+        init();
     }
 
     private void showAuthCamDialogFragment(String phrase) {
         authDialog = new CameraDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(CameraDialogFragment.AUTH_BLSIB, phrase);
+        bundle.putString(CameraDialogFragment.AUTH_BLSIBARRAY, phrase);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsibcam");
@@ -219,7 +235,19 @@ public class UsdpMainActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
-        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIB, pattern);
+        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIBARRAY, pattern);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authblsib");
+        }
+    }
+
+    private void showAuthBEDA_LB_DialogFragment(boolean[] pattern) {
+        authDialog = new BlSiBDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
+        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIBARRAY, pattern);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
@@ -404,135 +432,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         btn_auth.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //showAuthBarcodeDialogFragment(generateQR("jetfuelmeltstealbeams!"));
 
-                // currently not supported(anim error as iv_blsib is not accessible
-                boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
-                //  showAuthBlSibDialogFragment(pattern);
-
-                //String phrase = "one, two, three, four, five, six, seven, eight, nine, ten";
-                //showAuthVicPDialogFragment(phrase);
-
-                final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
-                String testtext = et_authtext.getText().toString();
-
-                Bitmap bm = identicon.getBitmap(testtext);
-                showAuthVicIDialogFragment(bm);
-
-               /* showAuthVicPDialogFragment(testtext);
-
-                showAuthCamDialogFragment(testtext);
-
-                showBtnDialogFragment();
-
-                showAuthInfoDialogFragment("shakeshake");
-*/
-
-                //fNFC
-                mNfcAdapter = NfcAdapter.getDefaultAdapter(UsdpMainActivity.this);
-                if (mNfcAdapter == null) {
-                    Toast.makeText(UsdpMainActivity.this, "NFC is not available", Toast.LENGTH_LONG).show();
-                    finish();
-                    return;
-                }
-                // Register callback
-                String text = "Message from \"" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + "\"";
-                NdefMessage msg = new NdefMessage(
-                        new NdefRecord[]{NdefRecord.createMime(
-                                "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", text.getBytes())
-                                /**
-                                 * The Android Application Record (AAR) is commented out. When a device
-                                 * receives a push with an AAR in it, the application specified in the AAR
-                                 * is guaranteed to run. The AAR overrides the tag dispatch system.
-                                 * You can add it back in to guarantee that this
-                                 * activity starts when receiving a beamed message. For now, this code
-                                 * uses the tag dispatch system.
-                                */
-                                //,NdefRecord.createApplicationRecord("com.example.android.beam")
-                        });
-                mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
-
-                SimpleMadlib nsml = new SimpleMadlib();
-                nsml.parseWordlist(getApplicationContext());
-
-/*
-                AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
-
-                PitchDetectionHandler pdh = new PitchDetectionHandler() {
-                    @Override
-                    public void handlePitch(PitchDetectionResult result, AudioEvent e) {
-                        final float pitchInHz = result.getPitch();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Log.d(LOGTAG, "pitch: " + pitchInHz);
-                                int code = -1;
-
-    /*
-    610
-    * */
-
-    /*
-    * 600/630
-    * 650/690
-    * 710/740
-    * 1200/1230
-    * 1300/1350
-    * 1470/1490
-    * 400/420
-    * 1300/1350
-    * 740/770
-    * 770/790
-    * *//*
-                                if (pitchInHz > 600 && pitchInHz < 630) {
-                                    code = 1;
-                                } else if (pitchInHz > 660 && pitchInHz < 680) {
-                                    code = 2;
-                                } else if (pitchInHz > 730 && pitchInHz < 750) {
-                                    code = 3;
-                                } else if (pitchInHz > 400 && pitchInHz < 420) {
-                                    code = 4;
-                                } else if (pitchInHz > 430 && pitchInHz < 450) {
-                                    code = 5;
-                                } else if (pitchInHz > 750 && pitchInHz < 770) {
-                                    code = 6;
-                                } else if (pitchInHz > 400 && pitchInHz < 420) {
-                                    code = 7;
-                                } else if (pitchInHz > 430 && pitchInHz < 450) {
-                                    code = 8;
-                                } else if (pitchInHz > 750 && pitchInHz < 770) {
-                                    code = 9;
-                                } else if (pitchInHz > 790 && pitchInHz < 810) {
-                                    code = 10;
-                                }
-                                Log.d(LOGTAG, "code: " + code + "\t" + pitchInHz);
-                            }
-                        });
-                    }
-                };
-                AudioProcessor p = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
-                dispatcher.addAudioProcessor(p);
-                new Thread(dispatcher, "Audio Dispatcher").start();
-*/
-
-                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
-                //        playSound(toneGen, ToneGenerator.TONE_DTMF_1);
-                //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
-                //playSound(toneGen, ToneGenerator.TONE_DTMF_3);
-              /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_5);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_6);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_7);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_8);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_9);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_A);
-*/
-
-                //record();
-
-
-                Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                vib.vibrate(100);
             }
         });
 
@@ -596,10 +496,10 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
     }
 
-    private void playSound(ToneGenerator toneGen, int toneType) {
+    private void playSound(ToneGenerator toneGen, int toneType, int msduration) {
         if (toneGen.startTone(toneType)) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(msduration);
                 toneGen.stopTone();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -741,17 +641,217 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void manageAuthenticationDialog(OOBData oobData) {
+
+        //record();
+
         switch (oobData.getType()) {
             case OOBData.VIC_I:
                 final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
                 Bitmap bm = identicon.getBitmap(oobData.getAuthdata());
                 showAuthVicIDialogFragment(bm);
                 break;
-            case OOBData.VCI_N:
+            case OOBData.VIC_N:
+                showAuthVicPDialogFragment(oobData.getAuthdata());
                 break;
-            case "VCI_P":
+            case OOBData.VIC_P:
+                // TODO: use madlib
+                //smplMadlib.getWord()
+                showAuthVicPDialogFragment(oobData.getAuthdata());
                 break;
-            case "SiB":
+            case OOBData.SiB:
+                if (oobData.isSendingDevice()) {
+                    showAuthBarcodeDialogFragment(generateQR(oobData.getAuthdata()));
+                } else {
+                    Toast.makeText(this, "checking if zxing is installed", Toast.LENGTH_SHORT).show();
+                    if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client.android", this)) {
+                        Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+                        intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
+                        startActivityForResult(intent, 0);
+                    } else {
+                        // TODO goto market, install. check this at the start (kind of init app generally)
+                        Toast.makeText(this, "install zxing Barcode Scanner", Toast.LENGTH_SHORT).show();
+                        Log.d(LOGTAG, "install zxing Barcode Scanner");
+                    }
+                }
+
+                break;
+            case OOBData.SiBBlink:
+                if (oobData.isSendingDevice()) {
+                    boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
+                    showAuthBlSibDialogFragment(pattern);
+                } else {
+                    showAuthCamDialogFragment("ajsnd");
+                }
+                break;
+            case OOBData.LaCDS:
+                if (oobData.isSendingDevice()) {
+                    //display
+                } else {
+                    //speaker
+                }
+                break;
+            case OOBData.LaCSS:
+                if (oobData.isSendingDevice()) {
+                    //speaker
+                } else {
+                    //speaker
+                }
+                break;
+            case OOBData.BEDA_VB:
+                if (oobData.isSendingDevice()) {
+                    //vibrate
+                    Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                    vib.vibrate(100);
+                } else {
+                    showBtnDialogFragment();
+                }
+                break;
+            case OOBData.BEDA_LB:
+                if (oobData.isSendingDevice()) {
+                    boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
+                    showAuthBEDA_LB_DialogFragment(pattern);
+                } else {
+                    showBtnDialogFragment();
+                }
+                break;
+            case OOBData.BEDA_BPBT:
+                if (oobData.isSendingDevice()) {
+                    //speaker
+                    ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
+                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
+                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
+                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 2000);
+                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
+                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
+                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
+
+
+                } else {
+                    showBtnDialogFragment();
+                }
+                break;
+            case OOBData.BEDA_BTBT:
+                if (oobData.isSendingDevice()) {
+                    //button
+                } else {
+                    showBtnDialogFragment();
+                }
+                break;
+            case OOBData.HAPADEP:
+                if (oobData.isSendingDevice()) {
+                    //speaker
+                    ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
+                            playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
+                    //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
+                    //playSound(toneGen, ToneGenerator.TONE_DTMF_3);
+              /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_5);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_6);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_7);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_8);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_9);
+                playSound(toneGen, ToneGenerator.TONE_DTMF_A);
+*/
+                } else {
+                    //mic + speaker
+
+                    AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
+
+                    PitchDetectionHandler pdh = new PitchDetectionHandler() {
+                        @Override
+                        public void handlePitch(PitchDetectionResult result, AudioEvent e) {
+                            final float pitchInHz = result.getPitch();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d(LOGTAG, "pitch: " + pitchInHz);
+                                    int code = -1;
+
+    /*
+    610
+    * */
+
+    /*
+    * 600/630
+    * 650/690
+    * 710/740
+    * 1200/1230
+    * 1300/1350
+    * 1470/1490
+    * 400/420
+    * 1300/1350
+    * 740/770
+    * 770/790
+    * */
+                                    if (pitchInHz > 600 && pitchInHz < 630) {
+                                        code = 1;
+                                    } else if (pitchInHz > 660 && pitchInHz < 680) {
+                                        code = 2;
+                                    } else if (pitchInHz > 730 && pitchInHz < 750) {
+                                        code = 3;
+                                    } else if (pitchInHz > 400 && pitchInHz < 420) {
+                                        code = 4;
+                                    } else if (pitchInHz > 430 && pitchInHz < 450) {
+                                        code = 5;
+                                    } else if (pitchInHz > 750 && pitchInHz < 770) {
+                                        code = 6;
+                                    } else if (pitchInHz > 400 && pitchInHz < 420) {
+                                        code = 7;
+                                    } else if (pitchInHz > 430 && pitchInHz < 450) {
+                                        code = 8;
+                                    } else if (pitchInHz > 750 && pitchInHz < 770) {
+                                        code = 9;
+                                    } else if (pitchInHz > 790 && pitchInHz < 810) {
+                                        code = 10;
+                                    }
+                                    Log.d(LOGTAG, "code: " + code + "\t" + pitchInHz);
+                                }
+                            });
+                        }
+                    };
+                    AudioProcessor p = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
+                    dispatcher.addAudioProcessor(p);
+                    new Thread(dispatcher, "Audio Dispatcher").start();
+                }
+                break;
+            case OOBData.NFC:
+                if (oobData.isSendingDevice()) {
+                    //nfc send
+                    //fNFC
+                    mNfcAdapter = NfcAdapter.getDefaultAdapter(UsdpMainActivity.this);
+                    if (mNfcAdapter == null) {
+                        Toast.makeText(UsdpMainActivity.this, "NFC is not available", Toast.LENGTH_LONG).show();
+                        finish();
+                        return;
+                    }
+                    // Register callback
+                    String text = "Message from \"" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + "\"";
+                    NdefMessage msg = new NdefMessage(
+                            new NdefRecord[]{NdefRecord.createMime(
+                                    "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", text.getBytes())
+                                    /**
+                                     * The Android Application Record (AAR) is commented out. When a device
+                                     * receives a push with an AAR in it, the application specified in the AAR
+                                     * is guaranteed to run. The AAR overrides the tag dispatch system.
+                                     * You can add it back in to guarantee that this
+                                     * activity starts when receiving a beamed message. For now, this code
+                                     * uses the tag dispatch system.
+                                    */
+                                    //,NdefRecord.createApplicationRecord("com.example.android.beam")
+                            });
+                    mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
+                } else {
+                    //nfc receive
+                }
+                break;
+            case OOBData.SWBU:
+                if (oobData.isSendingDevice()) {
+                    //accel
+                    showAuthInfoDialogFragment("shakeshake");
+                } else {
+                    //accel
+                    showAuthInfoDialogFragment("shakeshake");
+                }
                 break;
         }
     }
