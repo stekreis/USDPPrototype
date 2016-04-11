@@ -3,7 +3,6 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
@@ -12,16 +11,17 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class ButtonDialogFragment extends AuthDialogFragment {
+public class BEDAButtonDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_BTN = "AUTH_BTN";
     private static final String LOGTAG = "ButtonDialogFragment";
@@ -64,12 +64,52 @@ public class ButtonDialogFragment extends AuthDialogFragment {
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                ButtonDialogFragment.this.getDialog().cancel();
+                BEDAButtonDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();
     }
 
+    public void test() {
+
+    }
+
+}
+
+class ReceiverButtonListener implements View.OnTouchListener {
+    private static final String LOGTAG = "ReceiverBtnListener";
+    private final long DOWNTHRESHOLD = 1000;
+    private final long UPTHRESHOLD = 2000;
+    private long lastUp = 0;
+    private long lastDown = 0;
+    private long lastDuration = 0;
+    private ArrayList<Boolean> data = new ArrayList<>();
+
+    private boolean decide(long duration) {
+        return duration > DOWNTHRESHOLD;
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            long curr = System.currentTimeMillis();
+            if (curr -lastUp > UPTHRESHOLD) {
+                if(!data.isEmpty()){
+                    // TODO: send data
+                    int val = Helper.getInt(Helper.getPrimitiveArrayMsbFront(data));
+                    Log.d(LOGTAG, "value: " + val);
+                }
+                data.clear();
+            }
+            lastDown = curr;
+        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            lastUp = System.currentTimeMillis();
+            lastDuration = lastUp - lastDown;
+            data.add(decide(lastDuration));
+            Log.d(LOGTAG, lastDuration + " ms");
+        }
+        return false;
+    }
 
 
 }

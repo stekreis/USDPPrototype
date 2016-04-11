@@ -16,21 +16,22 @@ import java.util.ListIterator;
  */
 public class SimpleMadlib {
 
-    public static final int WORDLIST_LENGTH = 1024;
+    public static final int WORDLIST_LENGTH = 20580;
     private static final String LOGTAG = "SimpleMadlib";
     private final String[] words = new String[WORDLIST_LENGTH];
 
-    public static String getSentence(List<Integer> numlist) {
-        ListIterator<Integer> liter = numlist.listIterator();
-        String stc = "";
-        while (liter.hasNext()) {
-            stc += liter.next() + " ";
-        }
-        return stc.trim();
-    }
-
     public String getWord(int pos) {
         return words[pos];
+    }
+
+    public String getSentence(int num) {
+        int rest = num;
+        String retVal = "";
+        while (rest != 0) {
+            retVal = words[(rest % 10) * 1000] + " " + retVal;
+            rest /= 10;
+        }
+        return retVal.trim();
     }
 
     public boolean parseWordlist(Context context) {

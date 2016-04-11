@@ -333,12 +333,22 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     case MessageManager.MSGTYPE_HELLO:
                         Log.d(LOGTAG, "kokett will be sent");
                         if (messageManager != null) {
+                            byte[] recData = (byte[]) msg.obj;
+                            byte[] data = new byte[recData.length - 1];
+                            System.arraycopy(recData, 1, data, 0, recData.length - 1);
+                            UsdpPacket prettyData = (UsdpPacket) SerializationUtils.deserialize(data);
+                            if (secureAuthentication == null) {
+                                secureAuthentication = new SecAuthVIC();
+                                secureAuthentication.init();
+                            }
+                            int publicKey = secureAuthentication.getPublicDeviceKey();
+
                             String[] supRecMechs = authMechManager.getSupportedRecMechs(deviceCapabilities.getValidCapabilities());
                             String[] supSendMechs = authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities());
-                            byte[] data = SerializationUtils.serialize(new UsdpPacket(supRecMechs, supSendMechs));
-                            ByteBuffer target = ByteBuffer.allocate(data.length + 1);
+                            byte[] dataSend = SerializationUtils.serialize(new UsdpPacket(supRecMechs, supSendMechs, publicKey));
+                            ByteBuffer target = ByteBuffer.allocate(dataSend.length + 1);
                             target.put(MessageManager.MSGTYPE_HELLOBACK);
-                            target.put(data);
+                            target.put(dataSend);
 
                             messageManager.write(target.array());
                             Log.d(LOGTAG, "kokett sent");
@@ -387,6 +397,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     public void setMessageManager(MessageManager obj) {
         messageManager = obj;
+        Log.d(LOGTAG, "messman was set" + obj);
     }
 
 
@@ -413,12 +424,12 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                     matches = true;
                                     Log.d(LOGTAG, "found match thissend");
                                     //this device sends, remote device receives
-                                    OOBData data = new OOBData(authMechStr, "authdata", true);
+                                    OOBData data = new OOBData(authMechStr, secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()), true);
                                     Message retmsg = Message.obtain(null,
                                             MSG_AUTHENTICATION_DIALOG_DATA, data);
                                     sendMsgToActivity(retmsg);
                                     //TODO inform other device to receive
-                                    OOBData dataRemote = new OOBData(authMechStr, "authdata", false);
+                                    OOBData dataRemote = new OOBData(authMechStr, secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()), false);
                                     if (messageManager != null) {
 
                                         byte[] dataRem = SerializationUtils.serialize(dataRemote);
@@ -441,7 +452,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                         matches = true;
                                         Log.d(LOGTAG, "found match thisreceive");
                                         //remote device sends, this device receives
-                                        OOBData data = new OOBData(authMechStr, "authdata", false);
+                                        OOBData data = new OOBData(authMechStr, secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()), false);
                                         Message retmsg = Message.obtain(null,
                                                 MSG_AUTHENTICATION_DIALOG_DATA, data);
                                         sendMsgToActivity(retmsg);
@@ -519,8 +530,14 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                             case WifiP2pDevice.CONNECTED:
                                 // send first hello
                                 if (messageManager != null) {
+                                    Toast.makeText(getApplicationContext(), "messman not null", Toast.LENGTH_SHORT).show();
+                                    if (secureAuthentication == null) {
+                                        secureAuthentication = new SecAuthVIC();
+                                        secureAuthentication.init();
+                                    }
+                                    int publicKey = secureAuthentication.getPublicDeviceKey();
 
-                                    byte[] data = SerializationUtils.serialize(new UsdpPacket("uniqueID", "protVersion1.0"));
+                                    byte[] data = SerializationUtils.serialize(new UsdpPacket("uniqueID", "protVersion1.0", publicKey));
                                     ByteBuffer target = ByteBuffer.allocate(data.length + 1);
                                     target.put(MessageManager.MSGTYPE_HELLO);
                                     target.put(data);

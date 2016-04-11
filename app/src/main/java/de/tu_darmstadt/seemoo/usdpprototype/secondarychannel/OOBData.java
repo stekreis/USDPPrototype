@@ -23,10 +23,10 @@ public class OOBData implements Serializable {
     public static final String SWBU = "SWBU";
 
     private String type;
-    private String authdata;
+    private int authdata;
     private boolean roleSend;
 
-    public OOBData(String type, String authdata, boolean roleSend) {
+    public OOBData(String type, int authdata, boolean roleSend) {
         this.type = type;
         this.authdata = authdata;
         this.roleSend = roleSend;
@@ -40,7 +40,7 @@ public class OOBData implements Serializable {
         return roleSend;
     }
 
-    public String getAuthdata() {
+    public int getAuthdata() {
         return authdata;
     }
 }

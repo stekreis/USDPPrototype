@@ -11,16 +11,19 @@ public class UsdpPacket implements Serializable {
     private String protVersion;
     private String[] mechsRec;
     private String[] mechsSend;
+    private int publicKey;
 
 
-    public UsdpPacket(String[] mechsRec, String[] mechsSend) {
+    public UsdpPacket(String[] mechsRec, String[] mechsSend, int publicKey) {
         this.mechsRec = mechsRec;
         this.mechsSend = mechsSend;
+        this.publicKey = publicKey;
     }
 
-    public UsdpPacket(String uniqueId, String protVersion) {
+    public UsdpPacket(String uniqueId, String protVersion, int publicKey) {
         this.uniqueId = uniqueId;
         this.protVersion = protVersion;
+        this.publicKey = publicKey;
     }
 
 
@@ -38,5 +41,9 @@ public class UsdpPacket implements Serializable {
 
     public String getProtVersion() {
         return protVersion;
+    }
+
+    public int getRemoteDevPublicKey() {
+        return publicKey;
     }
 }

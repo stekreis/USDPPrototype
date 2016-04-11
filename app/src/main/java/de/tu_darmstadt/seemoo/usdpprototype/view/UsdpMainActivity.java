@@ -1,6 +1,7 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
@@ -17,6 +18,7 @@ import android.media.ToneGenerator;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -26,6 +28,7 @@ import android.os.Messenger;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.Vibrator;
+import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -52,6 +55,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
@@ -63,10 +67,13 @@ import be.tarsos.dsp.pitch.PitchProcessor;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDAButtonDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_VibDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.ButtonDialogFragment;
@@ -156,6 +163,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();
         }
     };
+    private TextToSpeech tts;
 
     // TODO move to own class? with other overall usable methods
     public static boolean isPackageInstalled(String packagename, Context context) {
@@ -171,6 +179,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     private void init() {
         smplMadlib = new SimpleMadlib();
         smplMadlib.parseWordlist(getApplicationContext());
+
+        initTts();
+
         initViewComponents();
     }
 
@@ -200,6 +211,16 @@ public class UsdpMainActivity extends AppCompatActivity {
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvicp");
+        }
+    }
+
+    private void showAuthLacdsDialogFragment(String phrase) {
+        authDialog = new VicPDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(VicPDialogFragment.AUTH_VICP, phrase);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authLaC_DS");
         }
     }
 
@@ -242,6 +263,18 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    private void showAuthBedaVibDialogFragment(boolean[] pattern) {
+        authDialog = new BEDA_VibDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA vibrate-button");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device when vibrating");
+        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIBARRAY, pattern);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authblsib");
+        }
+    }
+
     private void showAuthBEDA_LB_DialogFragment(boolean[] pattern) {
         authDialog = new BlSiBDialogFragment();
         Bundle bundle = new Bundle();
@@ -270,14 +303,14 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
-    private void showBtnDialogFragment() {
-        authDialog = new ButtonDialogFragment();
+    private void showBEDABtnDialogFragment() {
+        authDialog = new BEDAButtonDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA_VB");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "press button when triggered by vibration");
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
-            authDialog.show(getSupportFragmentManager(), "authblsib");
+            authDialog.show(getSupportFragmentManager(), "beda_vb");
         }
     }
 
@@ -427,7 +460,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
 
         ImageButton btn_auth = (ImageButton) findViewById(R.id.btn_auth);
-        btn_auth.setImageBitmap(generateQR("jet fuel"));
+        btn_auth.setImageBitmap(Helper.generateQR("jet fuel"));
 
         btn_auth.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -496,7 +529,38 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
     }
 
-    private void playSound(ToneGenerator toneGen, int toneType, int msduration) {
+    private void playSequence(final boolean[] data) {
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_DTMF, 20);
+                for (int pos = 0; pos < data.length; pos++) {
+                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 500);
+                    if (data[pos]) {
+                        playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
+                    }
+                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
+                }
+                playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 2000);
+            }
+        };
+        thread.start();
+    }
+
+    private void playSequence(final ArrayList<Integer> digits) {
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
+                for(Integer val : digits) {
+                    playSound(toneGen, val, 1000);
+                }
+            }
+        };
+        thread.start();
+    }
+
+    private void playSound(final ToneGenerator toneGen, final int toneType, final int msduration) {
         if (toneGen.startTone(toneType)) {
             try {
                 Thread.sleep(msduration);
@@ -505,7 +569,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-
     }
 
     @Override
@@ -594,35 +657,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         bindServiceIntent = new Intent(this, UsdpService.class);
     }
 
-    private Bitmap generateQR(String input) {
-        int width = 200;
-        int height = 200;
-        BitMatrix qrMatrix;
-        QRCodeWriter writer = new QRCodeWriter();
-        Bitmap mBitmap = null;
-        try {
-            qrMatrix = writer.encode(input, BarcodeFormat.QR_CODE, width, height);
-            mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    if (qrMatrix.get(i, j)) {
-                        mBitmap.setPixel(i, j, Color.BLACK);
-                    } else {
-                        mBitmap.setPixel(i, j, Color.WHITE);
-                    }
-
-
-                    //mBitmap.setPixel(i, j, qrMatrix.get(i, j) ? Color.BLACK : Color.WHITE);
-                }
-            }
-            Log.d(LOGTAG, "qrCreated");
-
-        } catch (WriterException e) {
-            e.printStackTrace();
-        }
-        return mBitmap;
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -640,27 +675,49 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void talk(String text) {
+        Log.d(LOGTAG, "i toagd1");
+
+        //TODO support old API (then remove  @TargetApi(Build.VERSION_CODES.LOLLIPOP))
+        tts.speak(text, TextToSpeech.QUEUE_ADD, null, "testmessage673");
+        Log.d(LOGTAG, "i toagd2");
+    }
+
+    private void initTts() {
+        //TODO move ttstest to own class
+        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    tts.setLanguage(Locale.US);
+                }
+            }
+        });
+    }
+
+
     private void manageAuthenticationDialog(OOBData oobData) {
 
         //record();
-
+        int authdata = oobData.getAuthdata();
+        String authdataStr = String.valueOf(authdata);
         switch (oobData.getType()) {
             case OOBData.VIC_I:
                 final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
-                Bitmap bm = identicon.getBitmap(oobData.getAuthdata());
+                Bitmap bm = identicon.getBitmap(authdataStr);
                 showAuthVicIDialogFragment(bm);
                 break;
             case OOBData.VIC_N:
-                showAuthVicPDialogFragment(oobData.getAuthdata());
+                showAuthVicPDialogFragment(authdataStr);
                 break;
             case OOBData.VIC_P:
-                // TODO: use madlib
-                //smplMadlib.getWord()
-                showAuthVicPDialogFragment(oobData.getAuthdata());
+                showAuthVicPDialogFragment(smplMadlib.getSentence(authdata));
                 break;
             case OOBData.SiB:
                 if (oobData.isSendingDevice()) {
-                    showAuthBarcodeDialogFragment(generateQR(oobData.getAuthdata()));
+                    showAuthBarcodeDialogFragment(Helper.generateQR(authdataStr));
                 } else {
                     Toast.makeText(this, "checking if zxing is installed", Toast.LENGTH_SHORT).show();
                     if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client.android", this)) {
@@ -677,71 +734,82 @@ public class UsdpMainActivity extends AppCompatActivity {
                 break;
             case OOBData.SiBBlink:
                 if (oobData.isSendingDevice()) {
-                    boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
+                    boolean[] pattern = Helper.getBinaryArray(authdata, 20);
                     showAuthBlSibDialogFragment(pattern);
                 } else {
                     showAuthCamDialogFragment("ajsnd");
                 }
                 break;
             case OOBData.LaCDS:
+                String sentenceDS = smplMadlib.getSentence(authdata);
                 if (oobData.isSendingDevice()) {
-                    //display
+                    showAuthLacdsDialogFragment(sentenceDS);
                 } else {
-                    //speaker
+                    talk(sentenceDS);
                 }
                 break;
             case OOBData.LaCSS:
+                String sentenceSS = smplMadlib.getSentence(authdata);
                 if (oobData.isSendingDevice()) {
                     //speaker
+                    talk(sentenceSS);
                 } else {
                     //speaker
+                    talk(sentenceSS);
                 }
                 break;
             case OOBData.BEDA_VB:
                 if (oobData.isSendingDevice()) {
                     //vibrate
-                    Vibrator vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                    vib.vibrate(100);
+                    Vibrator vib;
+                    vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                    boolean[] pattern = Helper.getBinaryArray(authdata, 20);
+                    long[] vibPattern = new long[pattern.length * 2];
+                    for (int pos = 0; pos < pattern.length; pos++) {
+                        vibPattern[pos * 2] = 500;
+                        if (pattern[pos]) {
+                            vibPattern[pos * 2 + 1] = 1500;
+                        } else {
+                            vibPattern[pos * 2 + 1] = 500;
+                        }
+                    }
+                    vibPattern[0] = 3000;
+                    vib.vibrate(vibPattern, 0);
                 } else {
-                    showBtnDialogFragment();
+                    showBEDABtnDialogFragment();
                 }
                 break;
             case OOBData.BEDA_LB:
                 if (oobData.isSendingDevice()) {
-                    boolean[] pattern = {false, false, false, true, false, true, true, false, true, true, true};
-                    showAuthBEDA_LB_DialogFragment(pattern);
+                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, 20));
                 } else {
-                    showBtnDialogFragment();
+                    showBEDABtnDialogFragment();
                 }
                 break;
             case OOBData.BEDA_BPBT:
                 if (oobData.isSendingDevice()) {
                     //speaker
-                    ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
-                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
-                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
-                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 2000);
-                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
-                    playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
-                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
-
-
+                    boolean[] data = Helper.getBinaryArray(authdata, 20);
+                    playSequence(data);
                 } else {
-                    showBtnDialogFragment();
+                    showBEDABtnDialogFragment();
                 }
                 break;
             case OOBData.BEDA_BTBT:
                 if (oobData.isSendingDevice()) {
                     //button
+                    showBEDABtnDialogFragment();
                 } else {
-                    showBtnDialogFragment();
+                    showBEDABtnDialogFragment();
                 }
                 break;
             case OOBData.HAPADEP:
                 if (oobData.isSendingDevice()) {
                     //speaker
-                    ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
-                            playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
+
+                    playSequence(Helper.getDigitlistFromInt(authdata));
+                    //ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
+                    //playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
                     //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
                     //playSound(toneGen, ToneGenerator.TONE_DTMF_3);
               /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
@@ -754,7 +822,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 */
                 } else {
                     //mic + speaker
-
+                    int x = ToneGenerator.TONE_DTMF_4;
                     AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
 
                     PitchDetectionHandler pdh = new PitchDetectionHandler() {

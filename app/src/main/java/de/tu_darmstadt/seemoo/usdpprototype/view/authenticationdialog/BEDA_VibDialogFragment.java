@@ -22,27 +22,46 @@ import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 
 /**
- * Created by kenny on 15.02.16.
+ * Created by kenny on 11.04.16.
  */
-public class BlSiBDialogFragment extends AuthDialogFragment {
-
+public class BEDA_VibDialogFragment extends AuthDialogFragment {
     private static final String LOGTAG = "BlSiBDialogFragment";
     private final Handler myHandler = new Handler();
-
     private boolean[] pattern = null;
     private int i = 0;
+    private Timer myTimer;
+    private ImageView iv_blsib;
+    private Vibrator vib;
     private final Runnable myRunnable = new Runnable() {
         public void run() {
             Log.d(LOGTAG, "running " + i);
             if (!pattern[i % pattern.length]) {
-                iv_blsib.setVisibility(View.VISIBLE);
+                vib.vibrate(500);
+                vib.cancel();
+                try {
+                    Thread.sleep(500);
+                    vib.cancel();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else {
-                iv_blsib.setVisibility(View.INVISIBLE);
+                vib.vibrate(1500);
+                try {
+                    Thread.sleep(1500);
+                    vib.cancel();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     };
-    private Timer myTimer;
-    private ImageView iv_blsib;
+
+
 
     @Override
     @NonNull
@@ -54,6 +73,10 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
 
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
+
+
+        vib = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+
 
         View view = layoutInflater.inflate(R.layout.dialog_auth_img, null);
 
@@ -74,7 +97,7 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                BlSiBDialogFragment.this.getDialog().cancel();
+                BEDA_VibDialogFragment.this.getDialog().cancel();
             }
         });
 
