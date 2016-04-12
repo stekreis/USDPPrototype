@@ -73,8 +73,6 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialog
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.AsymmetricIdenticon;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
-//import android.app.FragmentManager;
-
 public class UsdpMainActivity extends AppCompatActivity {
 
     private static final String LOGTAG = "UsdpMainActivity";
@@ -86,8 +84,6 @@ public class UsdpMainActivity extends AppCompatActivity {
 
         @Override
         public void handleDetectedFrequencies(final double[] frequencies, final double[] powers, final double[] allFrequencies, final double allPowers[]) {
-/*            Toast.makeText(UsdpMainActivity.this, "doing gods work", Toast.LENGTH_SHORT).show();*/
-            //Log.d("GOERTZEL", "GOD" + frequencies.length + " // " +frequencies[0]);
             if (frequencies.length == 2) {
                 int rowIndex = -1;
                 int colIndex = -1;
@@ -103,10 +99,8 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                     char curChar = DTMF.DTMF_CHARACTERS[rowIndex][colIndex];
                     if (curChar >= '0' && curChar <= '9') {
-                        currCharacters[curChar - '0'] = currCharacters[curChar - '0'] + 1;
+                        currCharacters[curChar - '0']++;
                         newVal = true;
-                        /*Log.d("GOERTZEL", "GODtest" + currCharacters[curChar - '0']++);*/
-
                     } else if (curChar == 'A' && newVal) {
                         newVal = false;
                         char res = Helper.findHighestValPos(currCharacters);
@@ -114,9 +108,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                             dtmfCharacters.add((char) (res + '0'));
                             currCharacters = new int[currCharacters.length];
                         }
-
                     }
-                    Log.d("GOERTZEL", "GOD" + DTMF.DTMF_CHARACTERS[rowIndex][colIndex]);
                 }
             }
         }
@@ -130,9 +122,7 @@ public class UsdpMainActivity extends AppCompatActivity {
     private ArrayList<String> devList = new ArrayList<>();
     private EditText et_authtext;
     private AuthDialogFragment authDialog;
-    private Spinner sp_authmechs;
-    private ArrayAdapter spa_authmechs;
-    private ArrayList<String> mechList = new ArrayList<>();
+
     // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
@@ -407,16 +397,6 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        sp_authmechs = (Spinner) findViewById(R.id.sp_authmechs);
-        mechList = new ArrayList<String>();
-        mechList.add("test1");
-        mechList.add("test2");
-
-        spa_authmechs = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mechList);
-        spa_authmechs.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sp_authmechs.setAdapter(spa_authmechs);
-
-
         // UI
         Button btn_discover = (Button) findViewById(R.id.btn_discover);
         btn_discover.setOnClickListener(new View.OnClickListener() {
@@ -442,21 +422,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR));
             }
         });
-
-        // final Identicon identicon = (Identicon) findViewById(R.id.identicon);
-        //identicon.show("jet fuel");
-
-
-        ImageButton btn_auth = (ImageButton) findViewById(R.id.btn_auth);
-        btn_auth.setImageBitmap(Helper.generateQR("jet fuel"));
-
-        btn_auth.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
 
         et_authtext = (EditText) findViewById(R.id.et_text);
 
