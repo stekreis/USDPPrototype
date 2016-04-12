@@ -1,62 +1,27 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.TextView;
+
+import java.util.ArrayList;
+
+import de.tu_darmstadt.seemoo.usdpprototype.TwoLineArrayAdapter;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 
 /**
  * Created by kenny on 03.02.16.
  */
-public abstract class DeviceArrayAdapter<T> extends ArrayAdapter<T> {
-    private int mListItemLayoutResId;
-
-    public DeviceArrayAdapter(Context context, T[] ts) {
-        this(context, android.R.layout.two_line_list_item, ts);
-    }
-
-    public DeviceArrayAdapter(
-            Context context,
-            int listItemLayoutResourceId,
-            T[] ts) {
-        super(context, listItemLayoutResourceId, ts);
-        mListItemLayoutResId = listItemLayoutResourceId;
+public class DeviceArrayAdapter extends TwoLineArrayAdapter<ListDevice> {
+    public DeviceArrayAdapter(Context context, ArrayList<ListDevice> employees) {
+        super(context, employees);
     }
 
     @Override
-    public android.view.View getView(
-            int position,
-            View convertView,
-            ViewGroup parent) {
-
-
-        LayoutInflater inflater = (LayoutInflater)getContext()
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-        View listItemView = convertView;
-        if (null == convertView) {
-            listItemView = inflater.inflate(
-                    mListItemLayoutResId,
-                    parent,
-                    false);
-        }
-
-        // The ListItemLayout must use the standard text item IDs.
-        TextView lineOneView = (TextView)listItemView.findViewById(
-                android.R.id.text1);
-        TextView lineTwoView = (TextView)listItemView.findViewById(
-                android.R.id.text2);
-
-        T t = (T)getItem(position);
-        lineOneView.setText(lineOneText(t));
-        lineTwoView.setText(lineTwoText(t));
-
-        return listItemView;
+    public String lineOneText(ListDevice e) {
+        return e.getName();
     }
 
-    public abstract String lineOneText(T t);
-
-    public abstract String lineTwoText(T t);
+    @Override
+    public String lineTwoText(ListDevice e) {
+        return e.getAddress();
+    }
 }

@@ -43,6 +43,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocketHandler;
@@ -143,6 +144,11 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     @Override
     public void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            Log.d(LOGTAG, "TTS Destroyed");
+        }
         unregisterReceiver(mReceiver);
         Log.d(LOGTAG, "service was destroyed");
         super.onDestroy();
@@ -179,15 +185,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         initTts();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void talk(String text) {
-        Log.d(LOGTAG, "i toagd1");
-
-        //TODO support old API (then remove  @TargetApi(Build.VERSION_CODES.LOLLIPOP))
-        //tts.speak(text, TextToSpeech.QUEUE_ADD, null, "testmessage673");
-        Log.d(LOGTAG, "i toagd2");
-    }
-
     private void initTts() {
         //TODO move ttstest to own class
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
@@ -204,17 +201,18 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public void peersAvailable(WifiP2pDeviceList peers) {
         WifiP2pDevice device;
         Log.d(LOGTAG, "list incoming");
-
+        ArrayList<ListDevice> listdevices = new ArrayList<>();
         for (WifiP2pDevice peer : peers.getDeviceList()) {
             device = peer;
             String deviceaddr = device.deviceAddress;
             discoveredDevices.put(deviceaddr, device);
+            listdevices.add(new ListDevice(deviceaddr, device.deviceName));
             Log.d(LOGTAG, deviceaddr + " found");
         }
         if (activityMessenger != null) {
-            ArrayList<String> deviceMacs = new ArrayList<>(discoveredDevices.keySet());
+            /*ArrayList<String> deviceMacs = new ArrayList<>(discoveredDevices.keySet());*/
             sendMsgToActivity(Message.obtain(null,
-                    MSG_PEERSDISCOVERED, deviceMacs));
+                    MSG_PEERSDISCOVERED, listdevices));
         }
     }
 
@@ -386,7 +384,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     default:
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 0, msg.arg1));
                         Log.d(LOGTAG, "missing/wrong MSGTYPE: " + new String((byte[]) msg.obj, 1, msg.arg1));
-                        talk(new String((byte[]) msg.obj, 0, msg.arg1));
                 }
                 break;
             default:
@@ -608,7 +605,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         String text = (String) msg.obj;
                         messageManager.write(text.getBytes());
                         //pushMessage("Me: " + chatLine.getText().toString());
-                        talk(text);
+
                     }
                 default:
                     super.handleMessage(msg);

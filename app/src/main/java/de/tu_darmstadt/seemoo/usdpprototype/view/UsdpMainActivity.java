@@ -1,7 +1,6 @@
 package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
@@ -16,9 +15,7 @@ import android.media.ToneGenerator;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -39,13 +36,10 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -59,6 +53,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
@@ -118,8 +113,8 @@ public class UsdpMainActivity extends AppCompatActivity {
     private DeviceCapabilities devCap = new DeviceCapabilities();
     //UI
     private ListView lv_discoveredDevices;
-    private ArrayAdapter la_discoveredDevices;
-    private ArrayList<String> devList = new ArrayList<>();
+    private DeviceArrayAdapter la_discoveredDevices;
+    private ArrayList<ListDevice> devList = new ArrayList<>();
     private EditText et_authtext;
     private AuthDialogFragment authDialog;
 
@@ -442,27 +437,17 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        devList.add("Discovered devices");
+        devList.add(new ListDevice("Discovered devices", "address"));
 
-        la_discoveredDevices = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, devList);
+        la_discoveredDevices = new DeviceArrayAdapter(getApplicationContext(), devList);
         lv_discoveredDevices = (ListView) findViewById(R.id.lv_discoveredDev);
+
         lv_discoveredDevices.setAdapter(la_discoveredDevices);
         lv_discoveredDevices.setBackgroundColor(Color.BLUE);
         lv_discoveredDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // TODO build own adapter
-                /*
-                String deviceText = ((String) lv_discoveredDevices.getAdapter().getItem(position));
-                int dvcTextLength = deviceText.length();
-                deviceText = deviceText.substring(dvcTextLength - 11, dvcTextLength - 1);
-                Log.d(LOGTAG, "test: " + deviceText);
-                WifiP2pDevice device = discoveredDevicesComplete.get(deviceText);
-                */
-                // end TODO
-
-
-                String deviceMac = lv_discoveredDevices.getAdapter().getItem(position).toString();
+                String deviceMac = ((ListDevice)(lv_discoveredDevices.getAdapter().getItem(position))).getAddress();
                 Log.d(LOGTAG, "DEVICEMAC: " + deviceMac);
                 Message msg = Message.obtain(null, UsdpService.MSG_CONNECT, deviceMac);
                 sendMsgtoService(msg);
@@ -474,7 +459,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         lv_discoveredDevices.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                String deviceMac = lv_discoveredDevices.getAdapter().getItem(position).toString();
+                String deviceMac = ((ListDevice)(lv_discoveredDevices.getAdapter().getItem(position))).getAddress();
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR, deviceMac));
 
                 return true;
@@ -629,20 +614,16 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void talk(String text) {
-        Log.d(LOGTAG, "i toagd1");
 
+    private void talk(String text) {
         //TODO support old API (then remove  @TargetApi(Build.VERSION_CODES.LOLLIPOP))
-        tts.speak(text, TextToSpeech.QUEUE_ADD, null, "testmessage673");
-        Log.d(LOGTAG, "i toagd2");
+        tts.speak(text, TextToSpeech.QUEUE_ADD, null);
     }
 
     private void initTts() {
         //TODO move ttstest to own class
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
-
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
                     tts.setLanguage(Locale.US);
@@ -681,7 +662,6 @@ public class UsdpMainActivity extends AppCompatActivity {
                         Log.d(LOGTAG, "install zxing Barcode Scanner");
                     }
                 }
-
                 break;
             case OOBData.SiBBlink:
                 if (oobData.isSendingDevice()) {
@@ -827,8 +807,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     break;
                 case UsdpService.MSG_PEERSDISCOVERED:
                     devList.clear();
-                    devList.addAll((List<String>) msg.obj);
-                    //addDeviceNames();
+                    devList.addAll((List<ListDevice>) msg.obj);
                     la_discoveredDevices.notifyDataSetChanged();
 
                     break;

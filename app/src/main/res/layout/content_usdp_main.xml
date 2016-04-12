@@ -27,7 +27,8 @@
         android:id="@+id/lv_discoveredDev"
         android:layout_below="@+id/btn_discover"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:background="#0000ff" />
 
     <ToggleButton
         android:layout_width="wrap_content"

@@ -91,17 +91,10 @@ public class Helper {
 
     public static boolean[] getBinaryArray(int data, int bits) {
         boolean[] pattern = new boolean[bits];
-
         for (int i = 0; i < pattern.length; i++) {
             pattern[pattern.length - i - 1] = ((data >> i) & 1) == 1;
         }
         return pattern;
-
-        /*boolean[] pattern = new boolean[bits];
-        for (int pos = 0; pos < pattern.length; pos++) {
-            pattern[pos] = (data & (1 << pos)) != 0;
-        }
-        return pattern;*/
     }
 
     public static int getInt(boolean[] data) {
