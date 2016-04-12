@@ -57,12 +57,12 @@ public class Helper {
         return primitives;
     }
 
-    public static ArrayList<Integer> getDigitlistFromInt(int val){
+    public static ArrayList<Integer> getDigitlistFromInt(int val) {
         ArrayList<Integer> digits = new ArrayList<Integer>();
-        do{
+        do {
             digits.add(0, val % 10);
             val /= 10;
-        } while  (val > 0);
+        } while (val > 0);
         return digits;
     }
 
@@ -108,6 +108,19 @@ public class Helper {
         int res = 0, l = data.length;
         for (int i = 0; i < l; ++i) {
             res = (res << 1) + (data[i] ? 1 : 0);
+        }
+        return res;
+    }
+
+    public static char findHighestValPos(int[] val) {
+        char res = 0;
+        for (char pos = 0; pos < val.length; pos++) {
+            if (val[pos] > val[res]) {
+                res = pos;
+            }
+        }
+        if (val[res] < 5) {
+            return '\uffff';
         }
         return res;
     }

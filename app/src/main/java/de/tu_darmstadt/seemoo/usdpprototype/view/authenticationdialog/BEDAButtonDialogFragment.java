@@ -24,7 +24,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 public class BEDAButtonDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_BTN = "AUTH_BTN";
-    private static final String LOGTAG = "ButtonDialogFragment";
+    private static final String LOGTAG = "VerificationButtonDialogFragment";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

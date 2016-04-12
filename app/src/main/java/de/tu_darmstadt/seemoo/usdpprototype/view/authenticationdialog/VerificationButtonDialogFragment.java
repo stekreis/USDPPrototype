@@ -3,34 +3,28 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class ButtonDialogFragment extends AuthDialogFragment {
+public class VerificationButtonDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_BTN = "AUTH_BTN";
-    private static final String LOGTAG = "ButtonDialogFragment";
+    private static final String LOGTAG = "VerifBtnDialogFragment";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(LOGTAG, "created");
-
     }
 
     @Override
@@ -64,7 +58,7 @@ public class ButtonDialogFragment extends AuthDialogFragment {
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                ButtonDialogFragment.this.getDialog().cancel();
+                VerificationButtonDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();

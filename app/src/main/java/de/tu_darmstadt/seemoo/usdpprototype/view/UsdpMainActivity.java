@@ -12,8 +12,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.media.ToneGenerator;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -47,23 +45,16 @@ import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.io.android.AudioDispatcherFactory;
-import be.tarsos.dsp.pitch.PitchDetectionHandler;
-import be.tarsos.dsp.pitch.PitchDetectionResult;
-import be.tarsos.dsp.pitch.PitchProcessor;
+import be.tarsos.dsp.pitch.DTMF;
+import be.tarsos.dsp.pitch.Goertzel;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
@@ -76,7 +67,6 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDAButton
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_VibDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.ButtonDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CameraDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
@@ -89,12 +79,51 @@ public class UsdpMainActivity extends AppCompatActivity {
 
     private static final String LOGTAG = "UsdpMainActivity";
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
-    MediaRecorder mRecorder;
-    String mFileName;
+    private final ArrayList<Character> dtmfCharacters = new ArrayList<>();
+    private final AudioProcessor goertzelAudioProcessor = new Goertzel(44100, 256, DTMF.DTMF_FREQUENCIES, new Goertzel.FrequenciesDetectedHandler() {
+        private int[] currCharacters = new int[10];
+        private boolean newVal = false;
+
+        @Override
+        public void handleDetectedFrequencies(final double[] frequencies, final double[] powers, final double[] allFrequencies, final double allPowers[]) {
+/*            Toast.makeText(UsdpMainActivity.this, "doing gods work", Toast.LENGTH_SHORT).show();*/
+            //Log.d("GOERTZEL", "GOD" + frequencies.length + " // " +frequencies[0]);
+            if (frequencies.length == 2) {
+                int rowIndex = -1;
+                int colIndex = -1;
+                for (int i = 0; i < 4; i++) {
+                    if (frequencies[0] == DTMF.DTMF_FREQUENCIES[i] || frequencies[1] == DTMF.DTMF_FREQUENCIES[i])
+                        rowIndex = i;
+                }
+                for (int i = 4; i < DTMF.DTMF_FREQUENCIES.length; i++) {
+                    if (frequencies[0] == DTMF.DTMF_FREQUENCIES[i] || frequencies[1] == DTMF.DTMF_FREQUENCIES[i])
+                        colIndex = i - 4;
+                }
+                if (rowIndex >= 0 && colIndex >= 0) {
+
+                    char curChar = DTMF.DTMF_CHARACTERS[rowIndex][colIndex];
+                    if (curChar >= '0' && curChar <= '9') {
+                        currCharacters[curChar - '0'] = currCharacters[curChar - '0'] + 1;
+                        newVal = true;
+                        /*Log.d("GOERTZEL", "GODtest" + currCharacters[curChar - '0']++);*/
+
+                    } else if (curChar == 'A' && newVal) {
+                        newVal = false;
+                        char res = Helper.findHighestValPos(currCharacters);
+                        if (res != '\uffff') {
+                            dtmfCharacters.add((char) (res + '0'));
+                            currCharacters = new int[currCharacters.length];
+                        }
+
+                    }
+                    Log.d("GOERTZEL", "GOD" + DTMF.DTMF_CHARACTERS[rowIndex][colIndex]);
+                }
+            }
+        }
+    });
+
     private NfcAdapter mNfcAdapter;
-
     private DeviceCapabilities devCap = new DeviceCapabilities();
-
     //UI
     private ListView lv_discoveredDevices;
     private ArrayAdapter la_discoveredDevices;
@@ -108,10 +137,7 @@ public class UsdpMainActivity extends AppCompatActivity {
     private Messenger mService = null;
     private Intent bindServiceIntent;
     private boolean mBound;
-
     private SimpleMadlib smplMadlib;
-
-
     /**
      * Class for interacting with the main interface of the service.
      */
@@ -184,7 +210,6 @@ public class UsdpMainActivity extends AppCompatActivity {
 
         initViewComponents();
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -314,31 +339,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
-    private void startRecording() {
-        mRecorder = new MediaRecorder();
-        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mRecorder.setOutputFile(mFileName);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        Log.d(LOGTAG, mFileName);
-        try {
-            mRecorder.prepare();
-        } catch (IOException e) {
-
-            Log.e(LOGTAG, "prepare() failed");
-        }
-
-        mRecorder.start();
-    }
-
-    private void record() {
-        mRecorder = new MediaRecorder();
-        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-        mFileName += "/record.3gp";
-
-        startRecording();
-    }
-
     @SuppressWarnings("deprecation")
     private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -395,27 +395,15 @@ public class UsdpMainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG, et_authtext.getText().toString()));
+                //sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG, et_authtext.getText().toString()));
 
-/*                try {
-                    Toast.makeText(UsdpMainActivity.this, toMD5("hallo".getBytes("UTF-8")), Toast.LENGTH_SHORT).show();
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }*/
-
-                if (mRecorder != null) {
-                    mRecorder.stop();
-                    mRecorder.release();
-                    mRecorder = null;
-                    MediaPlayer mPlayer = new MediaPlayer();
-                    try {
-                        mPlayer.setDataSource(mFileName);
-                        mPlayer.prepare();
-                        mPlayer.start();
-                    } catch (IOException e) {
-                        Log.e(LOGTAG, "prepare() failed");
-                    }
+                String res = "";
+                for (Character x : dtmfCharacters) {
+                    res += x + "/";
                 }
+
+                Log.d("GODRESULT", res);
+                dtmfCharacters.clear();
             }
         });
 
@@ -551,9 +539,13 @@ public class UsdpMainActivity extends AppCompatActivity {
         Thread thread = new Thread() {
             @Override
             public void run() {
-                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
-                for(Integer val : digits) {
-                    playSound(toneGen, val, 1000);
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_DTMF, 50);
+                // delay for other device to get started
+                playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
+                for (Integer val : digits) {
+                    playSound(toneGen, val, 300);
+                    // use as seperator
+                    playSound(toneGen, ToneGenerator.TONE_DTMF_A, 100);
                 }
             }
         };
@@ -595,7 +587,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         Toast.makeText(UsdpMainActivity.this, "NFC message transmitted! " + new String(msg.getRecords()[0].getPayload()), Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
     }
-
 
     /**
      * Send a prepared message to the service, method takes care of error handling
@@ -657,8 +648,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         bindServiceIntent = new Intent(this, UsdpService.class);
     }
 
-
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -697,10 +686,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
     }
 
-
     private void manageAuthenticationDialog(OOBData oobData) {
-
-        //record();
         int authdata = oobData.getAuthdata();
         String authdataStr = String.valueOf(authdata);
         switch (oobData.getType()) {
@@ -806,80 +792,14 @@ public class UsdpMainActivity extends AppCompatActivity {
             case OOBData.HAPADEP:
                 if (oobData.isSendingDevice()) {
                     //speaker
-
                     playSequence(Helper.getDigitlistFromInt(authdata));
-                    //ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 20);
-                    //playSound(toneGen, ToneGenerator.TONE_DTMF_1, 1000);
-                    //      playSound(toneGen, ToneGenerator.TONE_DTMF_2);
-                    //playSound(toneGen, ToneGenerator.TONE_DTMF_3);
-              /*  playSound(toneGen, ToneGenerator.TONE_DTMF_4);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_5);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_6);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_7);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_8);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_9);
-                playSound(toneGen, ToneGenerator.TONE_DTMF_A);
-*/
                 } else {
                     //mic + speaker
-                    int x = ToneGenerator.TONE_DTMF_4;
-                    AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
+                    AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(44100, 2048, 1024);
+                    dispatcher.addAudioProcessor(goertzelAudioProcessor);
 
-                    PitchDetectionHandler pdh = new PitchDetectionHandler() {
-                        @Override
-                        public void handlePitch(PitchDetectionResult result, AudioEvent e) {
-                            final float pitchInHz = result.getPitch();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Log.d(LOGTAG, "pitch: " + pitchInHz);
-                                    int code = -1;
-
-    /*
-    610
-    * */
-
-    /*
-    * 600/630
-    * 650/690
-    * 710/740
-    * 1200/1230
-    * 1300/1350
-    * 1470/1490
-    * 400/420
-    * 1300/1350
-    * 740/770
-    * 770/790
-    * */
-                                    if (pitchInHz > 600 && pitchInHz < 630) {
-                                        code = 1;
-                                    } else if (pitchInHz > 660 && pitchInHz < 680) {
-                                        code = 2;
-                                    } else if (pitchInHz > 730 && pitchInHz < 750) {
-                                        code = 3;
-                                    } else if (pitchInHz > 400 && pitchInHz < 420) {
-                                        code = 4;
-                                    } else if (pitchInHz > 430 && pitchInHz < 450) {
-                                        code = 5;
-                                    } else if (pitchInHz > 750 && pitchInHz < 770) {
-                                        code = 6;
-                                    } else if (pitchInHz > 400 && pitchInHz < 420) {
-                                        code = 7;
-                                    } else if (pitchInHz > 430 && pitchInHz < 450) {
-                                        code = 8;
-                                    } else if (pitchInHz > 750 && pitchInHz < 770) {
-                                        code = 9;
-                                    } else if (pitchInHz > 790 && pitchInHz < 810) {
-                                        code = 10;
-                                    }
-                                    Log.d(LOGTAG, "code: " + code + "\t" + pitchInHz);
-                                }
-                            });
-                        }
-                    };
-                    AudioProcessor p = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
-                    dispatcher.addAudioProcessor(p);
-                    new Thread(dispatcher, "Audio Dispatcher").start();
+                    new Thread(dispatcher).start();
+                    Log.d(LOGTAG, "goertzel now started");
                 }
                 break;
             case OOBData.NFC:
@@ -948,11 +868,6 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                     break;
                 case UsdpService.MSG_AUTHMECHS:
-                    //mechList.clear();
-                    //mechList.addAll((List<String>) msg.obj);
-                    //spa_authmechs.notifyDataSetChanged();
-
-
                     AlertDialog.Builder authMechDialog = new AlertDialog.Builder(UsdpMainActivity.this);
                     authMechDialog.setTitle("Choose authentication mechanism");
                     final String[] types = (String[]) msg.obj;
