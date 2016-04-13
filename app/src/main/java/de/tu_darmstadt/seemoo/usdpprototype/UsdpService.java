@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.AssetManager;
-import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -19,11 +17,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
-
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
 
 import org.apache.commons.lang3.SerializationUtils;
 
@@ -40,6 +33,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
@@ -99,6 +93,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     //WifiP2p fields
     private WiFiDirectBroadcastReceiver mReceiver;
+    private HashMap<String, MyWifiP2pDevice> discoveredDevicesNEW = new HashMap<>();
     private HashMap<String, WifiP2pDevice> discoveredDevices = new HashMap<>();
     private WifiP2pManager wifiP2pManager;
     private WifiP2pManager.Channel mChannel;
@@ -241,32 +236,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         statusTxtView.setVisibility(View.GONE);*/
     }
 
-    private Bitmap generateQRCode(String input) {
-        BitMatrix qrMatrix;
-        QRCodeWriter writer = new QRCodeWriter();
-        Bitmap mBitmap = null;
-        try {
-            qrMatrix = writer.encode(input, BarcodeFormat.QR_CODE, 100, 100);
-            mBitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
-
-            for (int i = 0; i < 100; i++) {
-                for (int j = 0; j < 100; j++) {
-                    if (qrMatrix.get(i, j)) {
-                        mBitmap.setPixel(i, j, Color.BLACK);
-                    } else {
-                        mBitmap.setPixel(i, j, Color.WHITE);
-                    }
-                }
-            }
-            Log.d(LOGTAG, "qrCreated");
-
-        } catch (WriterException e) {
-            e.printStackTrace();
-        }
-        return mBitmap;
-    }
-
-    /*
+   /*
     handles incoming messages from other device forwarded by MessageManager
      */
     @Override
@@ -290,7 +260,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         break;
                     case MessageManager.MSGTYPE_INAUTH:
                         sendMsgToActivity(Message.obtain(null,
-                                AUTH_BARCODE, generateQRCode("jet fuel")));
+                                AUTH_BARCODE, Helper.generateQR("jet fuel")));
 
                         //send int as byte[]
                         byte[] bytes = ByteBuffer.allocate(4).putInt(123123).array();

@@ -17,7 +17,6 @@ public class AuthDialogFragment extends DialogFragment {
     protected String title = "Authentication dialog";
     protected String info = "";
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioManager;
@@ -23,7 +22,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.Parcelable;
 import android.os.RemoteException;
-import android.os.Vibrator;
 import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -37,8 +35,11 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,6 +118,8 @@ public class UsdpMainActivity extends AppCompatActivity {
     private ArrayList<ListDevice> devList = new ArrayList<>();
     private EditText et_authtext;
     private AuthDialogFragment authDialog;
+
+    private TextView tv_status;
 
     // Service connection
     private Messenger mService = null;
@@ -410,6 +413,9 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
+        tv_status = (TextView) findViewById(R.id.status);
+        setStateInfo();
+
         et_authtext = (EditText) findViewById(R.id.et_text);
 
         ToggleButton btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
@@ -475,6 +481,10 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         };
         thread.start();
+    }
+
+    private void setStateInfo() {
+        tv_status.setText("Connected Devices:\t" + 1337 + "\ncheck");
     }
 
     private void playSequence(final ArrayList<Integer> digits) {
@@ -682,20 +692,7 @@ public class UsdpMainActivity extends AppCompatActivity {
             case OOBData.BEDA_VB:
                 if (oobData.isSendingDevice()) {
                     //vibrate
-                    Vibrator vib;
-                    vib = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-                    boolean[] pattern = Helper.getBinaryArray(authdata, 20);
-                    long[] vibPattern = new long[pattern.length * 2];
-                    for (int pos = 0; pos < pattern.length; pos++) {
-                        vibPattern[pos * 2] = 500;
-                        if (pattern[pos]) {
-                            vibPattern[pos * 2 + 1] = 1500;
-                        } else {
-                            vibPattern[pos * 2 + 1] = 500;
-                        }
-                    }
-                    vibPattern[0] = 3000;
-                    vib.vibrate(vibPattern, 0);
+                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, 20));
                 } else {
                     showBEDABtnDialogFragment();
                 }

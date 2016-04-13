@@ -1,4 +1,3 @@
-
 package de.tu_darmstadt.seemoo.usdpprototype.primarychannel;
 
 import android.os.Handler;
@@ -16,10 +15,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class ServerSocketHandler extends Thread {
 
-    private ServerSocket socket = null;
-    private final int THREAD_COUNT = 10;
-    private Handler handler;
     private static final String TAG = "ServerSocketHandler";
+    private final int THREAD_COUNT = 10;
+    /**
+     * A ThreadPool for client sockets.
+     */
+    private final ThreadPoolExecutor pool = new ThreadPoolExecutor(
+            THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<Runnable>());
+    private ServerSocket socket = null;
+    private Handler handler;
 
     public ServerSocketHandler(Handler handler) throws IOException {
         try {
@@ -34,13 +39,6 @@ public class ServerSocketHandler extends Thread {
 
     }
 
-    /**
-     * A ThreadPool for client sockets.
-     */
-    private final ThreadPoolExecutor pool = new ThreadPoolExecutor(
-            THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>());
-
     @Override
     public void run() {
         while (true) {
@@ -49,7 +47,6 @@ public class ServerSocketHandler extends Thread {
                 // there is a new connection
                 pool.execute(new MessageManager(socket.accept(), handler));
                 Log.d(TAG, "Launching the I/O handler");
-
             } catch (IOException e) {
                 try {
                     if (socket != null && !socket.isClosed())

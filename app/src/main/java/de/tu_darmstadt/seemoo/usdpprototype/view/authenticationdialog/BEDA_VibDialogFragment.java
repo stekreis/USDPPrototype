@@ -26,42 +26,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
  */
 public class BEDA_VibDialogFragment extends AuthDialogFragment {
     private static final String LOGTAG = "BlSiBDialogFragment";
-    private final Handler myHandler = new Handler();
-    private boolean[] pattern = null;
-    private int i = 0;
-    private Timer myTimer;
-    private ImageView iv_blsib;
     private Vibrator vib;
-    private final Runnable myRunnable = new Runnable() {
-        public void run() {
-            Log.d(LOGTAG, "running " + i);
-            if (!pattern[i % pattern.length]) {
-                vib.vibrate(500);
-                vib.cancel();
-                try {
-                    Thread.sleep(500);
-                    vib.cancel();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                vib.vibrate(1500);
-                try {
-                    Thread.sleep(1500);
-                    vib.cancel();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-
 
     @Override
     @NonNull
@@ -74,29 +39,38 @@ public class BEDA_VibDialogFragment extends AuthDialogFragment {
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
 
-
         vib = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        boolean[] pattern = bundle.getBooleanArray(AUTH_BLSIBARRAY);
+        long[] vibPattern = new long[pattern.length * 2];
+        for (int pos = 0; pos < pattern.length; pos++) {
+            vibPattern[pos * 2] = 500;
+            if (pattern[pos]) {
+                vibPattern[pos * 2 + 1] = 1500;
+            } else {
+                vibPattern[pos * 2 + 1] = 500;
+            }
+        }
+        vibPattern[0] = 3000;
+        vib.vibrate(vibPattern, 0);
 
 
-        View view = layoutInflater.inflate(R.layout.dialog_auth_img, null);
+        View view = layoutInflater.inflate(R.layout.dialog_auth_infoonly, null);
 
-        TextView tv_title = (TextView) view.findViewById(R.id.tv_authdialog_title);
-        tv_title.setText(title);
-        TextView tv_info = (TextView) view.findViewById(R.id.tv_authdialog_info);
+        /*TextView tv_title = (TextView) view.findViewById(R.id.tv_authdialog_title);
+        tv_title.setText(title);*/
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authdialog_explinfo);
         tv_info.setText(info);
-
-        iv_blsib = (ImageView) view.findViewById(R.id.iv_image);
-        iv_blsib.setBackgroundColor(Color.LTGRAY);
-        pattern = Helper.getSendingPattern(bundle.getBooleanArray(AUTH_BLSIBARRAY));
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                vib.cancel();
                 //TODO do something
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                vib.cancel();
                 BEDA_VibDialogFragment.this.getDialog().cancel();
             }
         });
@@ -104,30 +78,21 @@ public class BEDA_VibDialogFragment extends AuthDialogFragment {
         return builder.create();
     }
 
-    private void UpdateGUI() {
-        i++;
-        myHandler.post(myRunnable);
+    @Override
+    public void onDestroy() {
+        if (vib != null) {
+            vib.cancel();
+        }
+        super.onDestroy();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        i = 0;
-        myTimer = new Timer();
-        myTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                UpdateGUI();
-            }
-            // TODO change transmission value (200 ms dark between codes, 200/250/300/.. bright, 400 dark before sequence)
-        }, 0, 500);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (myTimer != null) {
-            myTimer.cancel();
-        }
     }
 }

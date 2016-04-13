@@ -13,7 +13,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 
 public class ClientSocketHandler extends Thread {
 
-    private static final String TAG = "ClientSocketHandler";
+    private static final String LOGTAG = "ClientSocketHandler";
     private Handler handler;
     private MessageManager chat;
     private InetAddress mAddress;
@@ -30,7 +30,7 @@ public class ClientSocketHandler extends Thread {
             socket.bind(null);
             socket.connect(new InetSocketAddress(mAddress.getHostAddress(),
                     UsdpService.SERVER_PORT), 5000);
-            Log.d(TAG, "Launching the I/O handler");
+            Log.d(LOGTAG, "Launching the I/O handler");
             chat = new MessageManager(socket, handler);
             new Thread(chat).start();
         } catch (IOException e) {
