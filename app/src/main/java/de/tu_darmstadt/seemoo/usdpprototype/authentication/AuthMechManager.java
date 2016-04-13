@@ -8,8 +8,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ListIterator;
 
 /**
@@ -173,7 +176,27 @@ public class AuthMechManager {
                 }
             }
         }
+    }
 
+    public ArrayList<AuthMechanism> getMechsByNames(String[] names) {
+        ArrayList<AuthMechanism> res = new ArrayList<>();
+        for (int pos = 0; pos < names.length; pos++) {
+            for (int ipos = 0; ipos < authmechs.length; ipos++) {
+                if (authmechs[ipos].getShortName().equals(names[pos])) {
+                    res.add(authmechs[ipos]);
+                }
+            }
+        }
+        return res;
+    }
+
+
+    public AuthMechanism[] sortAuthMechsBySec(String[] authmechs) {
+        String[] res = new String[authmechs.length];
+        ArrayList<AuthMechanism> mechs = getMechsByNames(authmechs);
+        Collections.sort(mechs);
+
+        return mechs.toArray(new AuthMechanism[mechs.size()]);
     }
 
 

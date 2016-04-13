@@ -24,8 +24,6 @@ public class DeviceCapabilities {
         }
     }
 
-    //TODO parse from file
-
     public void setCapability(int capability, boolean val) {
         deviceCaps[capability] = val;
     }

@@ -3,7 +3,7 @@
     "VIC-I": {
       "name": "VIC-I",
       "usedAuth": "MA-DH",
-      "secPoints": 8,
+      "secPoints": 40,
       "reqCapSend": [
         "display"
       ],
@@ -14,7 +14,7 @@
     "VIC-N": {
       "name": "VIC-N",
       "usedAuth": "MA-DH",
-      "secPoints": 8,
+      "secPoints": 40,
       "reqCapSend": [
         "display"
       ],
@@ -25,7 +25,7 @@
     "VIC-P": {
       "name": "VIC-P",
       "usedAuth": "MA-DH",
-      "secPoints": 8,
+      "secPoints": 40,
       "reqCapSend": [
         "display"
       ],
@@ -36,7 +36,7 @@
     "SiB": {
       "name": "SiB",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 60,
       "reqCapSend": [
         "display"
       ],
@@ -47,7 +47,7 @@
     "SiBBlink": {
       "name": "SiBBlink",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 40,
       "reqCapSend": [
         "display"
       ],
@@ -58,7 +58,7 @@
     "LaCDS": {
       "name": "LaCDS",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 40,
       "reqCapSend": [
         "display"
       ],
@@ -69,7 +69,7 @@
     "LaCSS": {
       "name": "LaCSS",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 30,
       "reqCapSend": [
         "speaker"
       ],
@@ -80,7 +80,7 @@
     "BEDA_VB": {
       "name": "BEDA_VB",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 80,
       "reqCapSend": [
         "vibration"
       ],
@@ -90,7 +90,7 @@
     "BEDA_LB": {
       "name": "BEDA_LB",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 60,
       "reqCapSend": [
         "led"
       ],
@@ -100,7 +100,7 @@
     "BEDA_BPBT": {
       "name": "BEDA_BPBT",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 70,
       "reqCapSend": [
         "speaker"
       ],
@@ -110,7 +110,7 @@
     "BEDA_BTBT": {
       "name": "BEDA_BTBT",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 60,
       "reqCapSend": [
       ],
       "reqCapRec": [
@@ -119,7 +119,7 @@
     "HAPADEP": {
       "name": "HAPADEP",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 90,
       "reqCapSend": [
         "speaker"
       ],
@@ -130,7 +130,7 @@
     "NFC": {
       "name": "NFC",
       "usedAuth": "MA-DH",
-      "secPoints": 10,
+      "secPoints": 100,
       "reqCapSend": [
         "nfc"
       ],

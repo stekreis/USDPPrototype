@@ -2,6 +2,8 @@ package de.tu_darmstadt.seemoo.usdpprototype;
 
 
 import android.content.Context;
+import android.graphics.Color;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,8 +58,11 @@ public abstract class TwoLineArrayAdapter<T> extends ArrayAdapter<T> {
         lineOneView.setText(lineOneText(t));
         lineTwoView.setText(lineTwoText(t));
 
+        listItemView.setBackgroundColor(mapStateToColor(t));
         return listItemView;
     }
+
+    public abstract int mapStateToColor(T t);
 
     public abstract String lineOneText(T t);
 

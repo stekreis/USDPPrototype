@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -32,7 +33,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -177,15 +177,7 @@ public class UsdpMainActivity extends AppCompatActivity {
     private TextToSpeech tts;
 
     // TODO move to own class? with other overall usable methods
-    public static boolean isPackageInstalled(String packagename, Context context) {
-        PackageManager pm = context.getPackageManager();
-        try {
-            pm.getPackageInfo(packagename, PackageManager.GET_ACTIVITIES);
-            return true;
-        } catch (PackageManager.NameNotFoundException e) {
-            return false;
-        }
-    }
+
 
     private void init() {
         smplMadlib = new SimpleMadlib();
@@ -437,7 +429,7 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        devList.add(new ListDevice("Discovered devices", "address"));
+        devList.add(new ListDevice("press \"Discover devices\"", "No other devices found", WifiP2pDevice.UNAVAILABLE));
 
         la_discoveredDevices = new DeviceArrayAdapter(getApplicationContext(), devList);
         lv_discoveredDevices = (ListView) findViewById(R.id.lv_discoveredDev);
@@ -447,7 +439,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         lv_discoveredDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String deviceMac = ((ListDevice)(lv_discoveredDevices.getAdapter().getItem(position))).getAddress();
+                String deviceMac = ((ListDevice) (lv_discoveredDevices.getAdapter().getItem(position))).getAddress();
                 Log.d(LOGTAG, "DEVICEMAC: " + deviceMac);
                 Message msg = Message.obtain(null, UsdpService.MSG_CONNECT, deviceMac);
                 sendMsgtoService(msg);
@@ -459,8 +451,8 @@ public class UsdpMainActivity extends AppCompatActivity {
         lv_discoveredDevices.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                String deviceMac = ((ListDevice)(lv_discoveredDevices.getAdapter().getItem(position))).getAddress();
-                sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR, deviceMac));
+                String deviceMac = ((ListDevice) (lv_discoveredDevices.getAdapter().getItem(position))).getAddress();
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_UNPAIR, deviceMac));
 
                 return true;
             }
@@ -517,14 +509,13 @@ public class UsdpMainActivity extends AppCompatActivity {
     public void onNewIntent(Intent intent) {
         // onResume gets called after this to handle the intent
         Toast.makeText(UsdpMainActivity.this, "new intent", Toast.LENGTH_SHORT).show();
-        Log.d(LOGTAG, "intent im zelt");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         //startActivity(intent);
         setIntent(intent);
     }
 
     /**
-     * Parses the NDEF Message from the intent and prints to the TextView
+     * Parses the NDEF Message from the intent
      */
     void processIntent(Intent intent) {
 
@@ -534,7 +525,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         NdefMessage msg = (NdefMessage) rawMsgs[0];
         // record 0 contains the MIME type, record 1 is the AAR, if present
 
-        Toast.makeText(UsdpMainActivity.this, "NFC message transmitted! " + new String(msg.getRecords()[0].getPayload()), Toast.LENGTH_SHORT).show();
+        Toast.makeText(UsdpMainActivity.this, "NFC message received! " + new String(msg.getRecords()[0].getPayload()), Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
     }
 
@@ -583,7 +574,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         Log.d(LOGTAG, "intent onresum");
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
             processIntent(getIntent());
-            Log.d(LOGTAG, "intent im zelt NFC");
         }
     }
 
@@ -652,7 +642,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     showAuthBarcodeDialogFragment(Helper.generateQR(authdataStr));
                 } else {
                     Toast.makeText(this, "checking if zxing is installed", Toast.LENGTH_SHORT).show();
-                    if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client.android", this)) {
+                    if (Helper.isPackageInstalled("com.google.zxing.client.android", this)) {
                         Intent intent = new Intent("com.google.zxing.client.android.SCAN");
                         intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
                         startActivityForResult(intent, 0);
@@ -761,16 +751,7 @@ public class UsdpMainActivity extends AppCompatActivity {
                     String text = "Message from \"" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + "\"";
                     NdefMessage msg = new NdefMessage(
                             new NdefRecord[]{NdefRecord.createMime(
-                                    "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", text.getBytes())
-                                    /**
-                                     * The Android Application Record (AAR) is commented out. When a device
-                                     * receives a push with an AAR in it, the application specified in the AAR
-                                     * is guaranteed to run. The AAR overrides the tag dispatch system.
-                                     * You can add it back in to guarantee that this
-                                     * activity starts when receiving a beamed message. For now, this code
-                                     * uses the tag dispatch system.
-                                    */
-                                    //,NdefRecord.createApplicationRecord("com.example.android.beam")
+                                    "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", authdataStr.getBytes())
                             });
                     mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
                 } else {
@@ -787,6 +768,15 @@ public class UsdpMainActivity extends AppCompatActivity {
                 }
                 break;
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
     }
 
     // TODO move to its own file?
@@ -806,10 +796,14 @@ public class UsdpMainActivity extends AppCompatActivity {
                     Toast.makeText(UsdpMainActivity.this, "service said hello!", Toast.LENGTH_SHORT).show();
                     break;
                 case UsdpService.MSG_PEERSDISCOVERED:
+                    List<ListDevice> devices = (List<ListDevice>) msg.obj;
                     devList.clear();
-                    devList.addAll((List<ListDevice>) msg.obj);
+                    if (devices.isEmpty()) {
+                        devList.add(new ListDevice("press \"Discover Devices\"", "No other devices found", WifiP2pDevice.UNAVAILABLE));
+                    } else {
+                        devList.addAll(devices);
+                    }
                     la_discoveredDevices.notifyDataSetChanged();
-
                     break;
                 case UsdpService.MSG_AUTHMECHS:
                     AlertDialog.Builder authMechDialog = new AlertDialog.Builder(UsdpMainActivity.this);

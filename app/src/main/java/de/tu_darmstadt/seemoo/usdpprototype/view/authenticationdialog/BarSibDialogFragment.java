@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -67,7 +68,7 @@ public class BarSibDialogFragment extends AuthDialogFragment {
             public void onClick(DialogInterface dialog, int id) {
                 //Intent result is received by Activity
                 Toast.makeText(getContext(), "checking if zxing is installed", Toast.LENGTH_SHORT).show();
-                if (UsdpMainActivity.isPackageInstalled("com.google.zxing.client.android", getContext())) {
+                if (Helper.isPackageInstalled("com.google.zxing.client.android", getContext())) {
                     Intent intent = new Intent("com.google.zxing.client.android.SCAN");
                     intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
                     getActivity().startActivityForResult(intent, 0);

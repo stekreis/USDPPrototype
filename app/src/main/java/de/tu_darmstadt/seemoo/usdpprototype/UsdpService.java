@@ -1,6 +1,5 @@
 package de.tu_darmstadt.seemoo.usdpprototype;
 
-import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -13,13 +12,11 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -28,6 +25,8 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import org.apache.commons.lang3.SerializationUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -35,11 +34,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
-
-import org.apache.commons.lang3.SerializationUtils;
 
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
@@ -95,11 +92,11 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_CHOSEN_AUTHMECH = 17;
     public static final int MSG_CHOSEN_ROLE = 18;
     public static final int MSG_AUTHENTICATION_DIALOG_DATA_REM = 19;
-    final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
+    public static final int MSG_UNPAIR = 20;
+    private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
-    SecureAuthentication secureAuthentication = null;
-    //TTStest
-    TextToSpeech tts;
+    private SecureAuthentication secureAuthentication = null;
+
     //WifiP2p fields
     private WiFiDirectBroadcastReceiver mReceiver;
     private HashMap<String, WifiP2pDevice> discoveredDevices = new HashMap<>();
@@ -144,11 +141,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     @Override
     public void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-            Log.d(LOGTAG, "TTS Destroyed");
-        }
         unregisterReceiver(mReceiver);
         Log.d(LOGTAG, "service was destroyed");
         super.onDestroy();
@@ -181,22 +173,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
         registerReceiver(mReceiver, mIntentFilter);
-
-        initTts();
     }
 
-    private void initTts() {
-        //TODO move ttstest to own class
-        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-
-            public void onInit(int status) {
-                if (status == TextToSpeech.SUCCESS) {
-                    tts.setLanguage(Locale.US);
-                }
-            }
-        });
-    }
 
     public void peersAvailable(WifiP2pDeviceList peers) {
         WifiP2pDevice device;
@@ -206,7 +184,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
             device = peer;
             String deviceaddr = device.deviceAddress;
             discoveredDevices.put(deviceaddr, device);
-            listdevices.add(new ListDevice(deviceaddr, device.deviceName));
+            listdevices.add(new ListDevice(deviceaddr, device.deviceName, device.status));
             Log.d(LOGTAG, deviceaddr + " found");
         }
         if (activityMessenger != null) {
@@ -278,9 +256,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     } else {
                         mBitmap.setPixel(i, j, Color.WHITE);
                     }
-
-
-                    //mBitmap.setPixel(i, j, qrMatrix.get(i, j) ? Color.BLACK : Color.WHITE);
                 }
             }
             Log.d(LOGTAG, "qrCreated");
@@ -308,7 +283,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 Log.d(LOGTAG, msg_type + "");
                 switch (msg_type) {
                     case MessageManager.MSGTYPE_PREAUTH:
-
                         // construct a string from the valid bytes in the buffer
                         String readMessage = new String(readBuf, 1, msg.arg1);
                         Log.d(LOGTAG, readMessage);
@@ -364,11 +338,20 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                         authMechManager.findComp(res, prettyData.getMechsSend(), authMechManager.getSupportedRecMechs(deviceCapabilities.getValidCapabilities()));
                         authMechManager.findComp(res, prettyData.getMechsRec(), authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities()));
+
                         String[] resRay = res.toArray(new String[res.size()]);
 
+                        AuthMechanism[] res2 = authMechManager.sortAuthMechsBySec(resRay);
+
+
+                        for (int pos = 0; pos < resRay.length; pos++) {
+                            resRay[pos] = res2[pos].getShortName(); //  + " (" + res2[pos].getSecPoints() + ")";
+                        }
+
                         //String[] authMechs = authMechManager.getSupportedMechs(deviceCapabilities.getValidCapabilities());
+
                         Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, resRay);
-                        //TODO sort authmechs by secpoints
+
                         sendMsgToActivity(authMechsMsg);
 
                         Log.d(LOGTAG, "chustcheckin " + prettyData.getMechsRec()[0]);
@@ -408,7 +391,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 case MSG_SAY_HELLO:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: hello!", Toast.LENGTH_SHORT).show();
                     break;
-
+                case MSG_UNPAIR:
+                    //TODO: unpair
+                    break;
                 case MSG_CHOSEN_AUTHMECH:
                     String[] supSendMechs = authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities());
                     boolean matches = false;
@@ -604,8 +589,6 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     if (messageManager != null) {
                         String text = (String) msg.obj;
                         messageManager.write(text.getBytes());
-                        //pushMessage("Me: " + chatLine.getText().toString());
-
                     }
                 default:
                     super.handleMessage(msg);
