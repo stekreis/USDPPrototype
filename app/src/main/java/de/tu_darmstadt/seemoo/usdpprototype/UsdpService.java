@@ -87,6 +87,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_CHOSEN_ROLE = 18;
     public static final int MSG_AUTHENTICATION_DIALOG_DATA_REM = 19;
     public static final int MSG_UNPAIR = 20;
+    public static final int MSG_REQST_OOB_DATA = 21;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
     private SecureAuthentication secureAuthentication = null;
@@ -236,9 +237,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         statusTxtView.setVisibility(View.GONE);*/
     }
 
-   /*
-    handles incoming messages from other device forwarded by MessageManager
-     */
+    /*
+     handles incoming messages from other device forwarded by MessageManager
+      */
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
@@ -279,6 +280,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                             byte[] data = new byte[recData.length - 1];
                             System.arraycopy(recData, 1, data, 0, recData.length - 1);
                             UsdpPacket prettyData = (UsdpPacket) SerializationUtils.deserialize(data);
+                            remoteDevice = prettyData;
                             if (secureAuthentication == null) {
                                 secureAuthentication = new SecAuthVIC();
                                 secureAuthentication.init();
@@ -331,6 +333,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         byte[] actualData = new byte[recAuthData.length - 1];
                         System.arraycopy(recAuthData, 1, actualData, 0, recAuthData.length - 1);
                         OOBData prettyData2 = (OOBData) SerializationUtils.deserialize(actualData);
+                        prettyData2.setAuthdata(secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()));
                         Message retmsg = Message.obtain(null,
                                 MSG_AUTHENTICATION_DIALOG_DATA, prettyData2);
                         sendMsgToActivity(retmsg);
@@ -364,6 +367,16 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 case MSG_UNPAIR:
                     //TODO: unpair
                     break;
+                case MSG_REQST_OOB_DATA:
+                    String authdataRem = (String) msg.obj;
+                    // TODO change from string to int comparison
+                    if (authdataRem.equals(String.valueOf(secureAuthentication.getGeneratedKeyVal()))) {
+                        Log.d(LOGTAG, "oobdata correct!");
+                    }
+                    else{
+                        Log.d(LOGTAG, "oobdata not correct!");
+                    }
+                    break;
                 case MSG_CHOSEN_AUTHMECH:
                     String[] supSendMechs = authMechManager.getSupportedSendMechs(deviceCapabilities.getValidCapabilities());
                     boolean matches = false;
@@ -381,7 +394,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                             MSG_AUTHENTICATION_DIALOG_DATA, data);
                                     sendMsgToActivity(retmsg);
                                     //TODO inform other device to receive
-                                    OOBData dataRemote = new OOBData(authMechStr, secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()), false);
+                                    OOBData dataRemote = new OOBData(authMechStr, -1, false);
                                     if (messageManager != null) {
 
                                         byte[] dataRem = SerializationUtils.serialize(dataRemote);

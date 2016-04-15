@@ -30,8 +30,6 @@ public class CameraDialogFragment extends AuthDialogFragment {
 
     private static final String LOGTAG = "AuthBarcodeDialogFrag";
 
-    private Bitmap barcode = null;
-
     /**
      * A safe way to get an instance of the Camera object.
      */
@@ -89,7 +87,7 @@ public class CameraDialogFragment extends AuthDialogFragment {
         checkCameraHardware(getContext());
 
 
-        // TODO myabe switch to camera2 API
+        // TODO maybe switch to camera2 API
         Camera cam = getCameraInstance();
         if(cam!= null) {
 

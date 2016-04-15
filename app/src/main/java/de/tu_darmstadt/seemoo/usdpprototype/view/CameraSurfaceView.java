@@ -7,9 +7,12 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 
 /**
  * SurfaceView to show camera preview and
@@ -18,14 +21,20 @@ import java.util.ListIterator;
 // TODO adapt to Camera2 API
 @SuppressWarnings("deprecation")
 public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
+
+    public final static int BLSIB_DURATION_FALSE = 500;
+    public final static int BLSIB_DURATION_TRUE = BLSIB_DURATION_FALSE * 2;
+    public final static int BLSIB_DURATION_MAXERR = BLSIB_DURATION_FALSE / 2;
+    private final static int CAM_ERR = -1;
+    private final static int CAM_FALSE = 0;
+    private final static int CAM_TRUE = 1;
     private static final String LOGTAG = "CameraPreview";
     private SurfaceHolder mHolder;
     private Camera mCamera;
-
     private LinkedList<Integer> transmittedVal = new LinkedList<Integer>();
-
-
-    private long lastTime = 0;
+    private ArrayList<Boolean> transmittedBinary = null;
+    private long brightTimeBegin = 0;
+    private long firstTimeDark = 0;
 
 
     public CameraSurfaceView(Context context, Camera camera) {
@@ -49,36 +58,69 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
         return (total < 0);
     }
 
-    private void checklight(byte[] data, int width, int height) {
-        long time = System.currentTimeMillis();
-        if (ledBright(data, width, height)) {
-            if (lastTime == 0) {
-                //new bright interval
-                lastTime = time;
-            } else {
-                //continued bright interval
-                //Log.d(LOGTAG, "white");
-            }
-        } else {
-            if (lastTime == 0) {
-                // do not react yet
-                //TODO find beginning of sequence by long dark interval
-                // ->reset transmittedVal List
-            } else {
-                //bright interval completed
-                transmittedVal.add(getDigitFromTimeDiff(lastTime, time));
-                lastTime = 0;
-            }
-        }
+    private boolean isNewSequence(long oldTime, long newTime) {
+        return oldTime != 0 && (newTime - oldTime) > BLSIB_DURATION_FALSE * 3 - BLSIB_DURATION_MAXERR;
     }
 
-    // resolve authentication digit by duration of bright interval
-    private int getDigitFromTimeDiff(long lastTime, long time) {
-        long diff = time - lastTime;
+    private int checkInterval(long oldTime, long newTime) {
+        long timeDiff = newTime - oldTime;
 
-        int diffInt = Math.round(((float) diff) / 200);
-        Log.d("digit", diffInt + "");
-        return diffInt;
+        if (timeDiff > (BLSIB_DURATION_FALSE - BLSIB_DURATION_MAXERR) && newTime - oldTime < (BLSIB_DURATION_TRUE + BLSIB_DURATION_MAXERR)) {
+            if (timeDiff > (BLSIB_DURATION_FALSE + BLSIB_DURATION_MAXERR)) {
+                return CAM_TRUE;
+            } else {
+                return CAM_FALSE;
+            }
+        }
+        return CAM_ERR;
+    }
+
+
+    private void checklight(byte[] data, int width, int height) {
+        long curTime = System.currentTimeMillis();
+        if (ledBright(data, width, height)) {
+            //led glows
+            if (isNewSequence(firstTimeDark, curTime)) {
+                //dark time interval exceeded
+                if (transmittedBinary != null) {
+                    Log.d(LOGTAG, "sequence completed");
+                    Log.d("recvd val: ", Helper.getInt(Helper.getPrimitiveArrayMsbFront(transmittedBinary)) + "");
+
+                    // sequence completed
+                    //checkSequence
+                    //sendSequence
+                    //transmittedBinary = null;
+                }
+                transmittedBinary = new ArrayList<>();
+            } else if (brightTimeBegin == 0) {
+                brightTimeBegin = curTime;
+            } else {
+                // wait until bright sequence completed
+
+            }
+            firstTimeDark = 0;
+        } else {
+            if (brightTimeBegin != 0 && transmittedBinary != null) {
+                int check = checkInterval(brightTimeBegin, curTime);
+                switch (check) {
+                    case 0:
+                        transmittedBinary.add(false);
+                        break;
+                    case 1:
+                        transmittedBinary.add(true);
+                        break;
+                    default:
+                        // do nothing
+                }
+            }
+            brightTimeBegin = 0;
+
+            if (firstTimeDark == 0) {
+                firstTimeDark = curTime;
+            } else {
+// wait until dark sequence completed
+            }
+        }
     }
 
     private void configCamera() {
@@ -101,7 +143,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
         }
         parameters.setPreviewSize(smallest.width, smallest.height);
 
-        Log.d("FLATTEN", parameters.flatten());
+        /*Log.d("FLATTEN", parameters.flatten());*/
 
 
         //parameters.setColorEffect(Camera.Parameters.EFFECT_MONO);

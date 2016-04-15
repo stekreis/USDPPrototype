@@ -23,6 +23,11 @@ public class OOBData implements Serializable {
     public static final String SWBU = "SWBU";
 
     private String type;
+
+    public void setAuthdata(int authdata) {
+        this.authdata = authdata;
+    }
+
     private int authdata;
     private boolean roleSend;
 

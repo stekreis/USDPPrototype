@@ -5,4 +5,5 @@
     <string name="btn_discover">Discover devices</string>
     <string name="btn_pair">Pair secure</string>
     <string name="device_capabilities">Device capabilities</string>
+    <string name="get_report">Show report</string>
 </resources>

@@ -39,8 +39,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +50,7 @@ import be.tarsos.dsp.pitch.DTMF;
 import be.tarsos.dsp.pitch.Goertzel;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
@@ -319,6 +318,11 @@ public class UsdpMainActivity extends AppCompatActivity {
         }
     }
 
+    public void oobDataReceived(String data) {
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_REQST_OOB_DATA, data));
+    }
+
+
     @SuppressWarnings("deprecation")
     private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -329,7 +333,7 @@ public class UsdpMainActivity extends AppCompatActivity {
             public boolean onMenuItemClick(MenuItem menuItem) {
 
                 switch (menuItem.getItemId()) {
-                    case R.id.action_settings:
+                    case R.id.mnu_action_settings:
                         AlertDialog dialog;
 
                         final CharSequence[] items = DeviceCapabilities.capTitles;
@@ -364,8 +368,11 @@ public class UsdpMainActivity extends AppCompatActivity {
                         dialog.show();
 
                         return true;
+                    case R.id.mnu_get_report:
+                        ReportDialogFragment rdf = new ReportDialogFragment();
+                        rdf.show(getSupportFragmentManager(),"report");
+                        break;
                 }
-
                 return false;
             }
         });
@@ -544,16 +551,18 @@ public class UsdpMainActivity extends AppCompatActivity {
      *
      * @param msg message to send
      */
-    private void sendMsgtoService(Message msg) {
+    private boolean sendMsgtoService(Message msg) {
         if (mService != null) {
             try {
                 mService.send(msg);
+                return true;
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
         } else {
             Toast.makeText(UsdpMainActivity.this, "start Service first", Toast.LENGTH_SHORT).show();
         }
+        return false;
     }
 
     @Override
@@ -571,7 +580,7 @@ public class UsdpMainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.mnu_action_settings) {
             return true;
         }
 
@@ -665,7 +674,8 @@ public class UsdpMainActivity extends AppCompatActivity {
                 break;
             case OOBData.SiBBlink:
                 if (oobData.isSendingDevice()) {
-                    boolean[] pattern = Helper.getBinaryArray(authdata, 20);
+                    boolean[] pattern = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
+                    /*boolean[] pattern = {true, false, false, false, true};*/
                     showAuthBlSibDialogFragment(pattern);
                 } else {
                     showAuthCamDialogFragment("ajsnd");
@@ -692,14 +702,14 @@ public class UsdpMainActivity extends AppCompatActivity {
             case OOBData.BEDA_VB:
                 if (oobData.isSendingDevice()) {
                     //vibrate
-                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, 20));
+                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
                 } else {
                     showBEDABtnDialogFragment();
                 }
                 break;
             case OOBData.BEDA_LB:
                 if (oobData.isSendingDevice()) {
-                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, 20));
+                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
                 } else {
                     showBEDABtnDialogFragment();
                 }
@@ -707,13 +717,14 @@ public class UsdpMainActivity extends AppCompatActivity {
             case OOBData.BEDA_BPBT:
                 if (oobData.isSendingDevice()) {
                     //speaker
-                    boolean[] data = Helper.getBinaryArray(authdata, 20);
+                    boolean[] data = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
                     playSequence(data);
                 } else {
                     showBEDABtnDialogFragment();
                 }
                 break;
             case OOBData.BEDA_BTBT:
+                // TODO not using SAS protocol
                 if (oobData.isSendingDevice()) {
                     //button
                     showBEDABtnDialogFragment();

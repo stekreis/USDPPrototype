@@ -26,12 +26,17 @@ public class SecAuthVIC extends SecureAuthentication {
     public final static int pValue = 913247;
     public final static int gValue = 370934;
     private static int bitlength = 20;
-    private final String LOGTAG = "SecAuthVIC";
-    private final int BITLENGTHMAX = 32;
+    private static final String LOGTAG = "SecAuthVIC";
+    private static final int BITLENGTHMAX = 32;
+    public static final int OOB_BITLENGTH = 20;
     private BigInteger priv;
     private BigInteger pub;
 
     private int generatedKey = 0;
+
+    public static String toMD5(byte[] convertible) {
+        return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
+    }
 
     @Override
     public void init() {
@@ -63,12 +68,6 @@ public class SecAuthVIC extends SecureAuthentication {
         BigInteger otherPublicVal = BigInteger.valueOf(othrPublicVal);
         return generatedKey = otherPublicVal.modPow(priv, pVal).intValue();
     }
-
-
-    public static String toMD5(byte[] convertible) {
-        return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
-    }
-
 
     public int getGeneratedKeyVal() {
         return generatedKey;
