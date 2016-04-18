@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -21,17 +20,20 @@ import java.util.TimerTask;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.view.CameraSurfaceView;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class BlSiBDialogFragment extends AuthDialogFragment {
+public class LEDBlinkAuthDialogFragment extends AuthDialogFragment {
 
-    private static final String LOGTAG = "BlSiBDialogFragment";
+    private static final String LOGTAG = "LEDBlinkAuthDialogFragment";
     private final Handler myHandler = new Handler();
 
     private boolean[] pattern = null;
     private int i = 0;
+    private Timer myTimer;
+    private ImageView iv_blsib;
     private final Runnable myRunnable = new Runnable() {
         public void run() {
             Log.d(LOGTAG, "running " + i);
@@ -42,8 +44,6 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
             }
         }
     };
-    private Timer myTimer;
-    private ImageView iv_blsib;
 
     @Override
     @NonNull
@@ -65,17 +65,18 @@ public class BlSiBDialogFragment extends AuthDialogFragment {
 
         iv_blsib = (ImageView) view.findViewById(R.id.iv_image);
         iv_blsib.setBackgroundColor(Color.LTGRAY);
-        pattern = Helper.getSendingPattern(bundle.getBooleanArray(AUTH_BLSIBARRAY));
+        pattern = Helper.getSendingPattern(bundle.getBooleanArray(AUTH_PATTERN));
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                //TODO do something
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                BlSiBDialogFragment.this.getDialog().cancel();
+                LEDBlinkAuthDialogFragment.this.getDialog().cancel();
             }
         });
 

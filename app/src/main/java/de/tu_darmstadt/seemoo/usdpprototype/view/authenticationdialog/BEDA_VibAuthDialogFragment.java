@@ -3,29 +3,21 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 
 /**
  * Created by kenny on 11.04.16.
  */
-public class BEDA_VibDialogFragment extends AuthDialogFragment {
-    private static final String LOGTAG = "BlSiBDialogFragment";
+public class BEDA_VibAuthDialogFragment extends AuthDialogFragment {
+    private static final String LOGTAG = "LEDBlinkAuthDialogFragment";
     private Vibrator vib;
 
     @Override
@@ -40,7 +32,7 @@ public class BEDA_VibDialogFragment extends AuthDialogFragment {
         // Pass null as the parent view because its going in the dialog layout
 
         vib = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
-        boolean[] pattern = bundle.getBooleanArray(AUTH_BLSIBARRAY);
+        boolean[] pattern = bundle.getBooleanArray(AUTH_PATTERN);
         long[] vibPattern = new long[pattern.length * 2];
         for (int pos = 0; pos < pattern.length; pos++) {
             vibPattern[pos * 2] = 500;
@@ -71,7 +63,7 @@ public class BEDA_VibDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 vib.cancel();
-                BEDA_VibDialogFragment.this.getDialog().cancel();
+                BEDA_VibAuthDialogFragment.this.getDialog().cancel();
             }
         });
 

@@ -5,6 +5,7 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     private Camera mCamera;
     private LinkedList<Integer> transmittedVal = new LinkedList<Integer>();
     private ArrayList<Boolean> transmittedBinary = null;
+    private ArrayList<Boolean> transmittedBinaryTemp = null;
     private long brightTimeBegin = 0;
     private long firstTimeDark = 0;
 
@@ -75,6 +77,9 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
         return CAM_ERR;
     }
 
+    public String getCaptSeq() {
+        return String.valueOf(Helper.getInt(Helper.getPrimitiveArrayMsbFront(transmittedBinaryTemp)));
+    }
 
     private void checklight(byte[] data, int width, int height) {
         long curTime = System.currentTimeMillis();
@@ -86,7 +91,8 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
                     Log.d(LOGTAG, "sequence completed");
                     Log.d("recvd val: ", Helper.getInt(Helper.getPrimitiveArrayMsbFront(transmittedBinary)) + "");
 
-                    // sequence completed
+                    transmittedBinaryTemp = (ArrayList<Boolean>) transmittedBinary.clone();
+                    Toast.makeText(getContext(), "Sequence completed. Click OK", Toast.LENGTH_SHORT).show();
                     //checkSequence
                     //sendSequence
                     //transmittedBinary = null;
@@ -118,7 +124,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
             if (firstTimeDark == 0) {
                 firstTimeDark = curTime;
             } else {
-// wait until dark sequence completed
+                // wait until dark sequence completed
             }
         }
     }

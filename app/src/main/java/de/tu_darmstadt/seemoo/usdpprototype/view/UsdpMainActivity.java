@@ -2,6 +2,7 @@ package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -29,12 +30,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,24 +61,25 @@ import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthInfoDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDAButtonDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_VibDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BlSiBDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CameraDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicIDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.VicPDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.InfoAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_BtnAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_VibAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.LEDBlinkAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.CamAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.ImgAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.StringAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.AsymmetricIdenticon;
 import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 
-public class UsdpMainActivity extends AppCompatActivity {
+public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFragment.oobResultInterface {
 
     private static final String LOGTAG = "UsdpMainActivity";
     private final static int CTXM_SENDMSG = 0;
     private final static int CTXM_GETRPRT = 1;
     private final static int CTXM_DISCONN = 2;
     private static final int CTXM_CNCLINV = 3;
+    private static final int AUTH_OOB_RESULT = 1;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final ArrayList<Character> dtmfCharacters = new ArrayList<>();
     private final AudioProcessor goertzelAudioProcessor = new Goertzel(44100, 256, DTMF.DTMF_FREQUENCIES, new Goertzel.FrequenciesDetectedHandler() {
@@ -200,9 +204,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthCamDialogFragment(String phrase) {
-        authDialog = new CameraDialogFragment();
+        authDialog = new CamAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(CameraDialogFragment.AUTH_BLSIBARRAY, phrase);
+        bundle.putString(CamAuthDialogFragment.AUTH_PATTERN, phrase);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsibcam");
@@ -210,9 +214,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthVicPDialogFragment(String phrase) {
-        authDialog = new VicPDialogFragment();
+        authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(VicPDialogFragment.AUTH_VICP, phrase);
+        bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvicp");
@@ -220,9 +224,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthLacdsDialogFragment(String phrase) {
-        authDialog = new VicPDialogFragment();
+        authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(VicPDialogFragment.AUTH_VICP, phrase);
+        bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authLaC_DS");
@@ -230,9 +234,9 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthInfoDialogFragment(String info) {
-        authDialog = new AuthInfoDialogFragment();
+        authDialog = new InfoAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(AuthInfoDialogFragment.AUTH_INFOONLY, info);
+        bundle.putString(InfoAuthDialogFragment.AUTH_INFOONLY, info);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "tzefuginfo");
@@ -241,15 +245,15 @@ public class UsdpMainActivity extends AppCompatActivity {
 
     private void showAuthVicIDialogFragment(Bitmap bmp) {
 
-        authDialog = new VicIDialogFragment();
+        authDialog = new ImgAuthDialogFragment();
         Bundle bundle = new Bundle();
         int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
         bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-I: compare images");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with image on other device");
-        bundle.putIntArray(VicIDialogFragment.IMG_IMAGE, pixels);
-        bundle.putInt(VicIDialogFragment.IMG_HEIGHT, bmp.getHeight());
-        bundle.putInt(VicIDialogFragment.IMG_WIDTH, bmp.getWidth());
+        bundle.putIntArray(ImgAuthDialogFragment.IMG_IMAGE, pixels);
+        bundle.putInt(ImgAuthDialogFragment.IMG_HEIGHT, bmp.getHeight());
+        bundle.putInt(ImgAuthDialogFragment.IMG_WIDTH, bmp.getWidth());
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvici");
@@ -257,11 +261,11 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthBlSibDialogFragment(boolean[] pattern) {
-        authDialog = new BlSiBDialogFragment();
+        authDialog = new LEDBlinkAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
-        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIBARRAY, pattern);
+        bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
@@ -269,11 +273,11 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthBedaVibDialogFragment(boolean[] pattern) {
-        authDialog = new BEDA_VibDialogFragment();
+        authDialog = new BEDA_VibAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA vibrate-button");
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA Vibrate-Button");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device when vibrating");
-        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIBARRAY, pattern);
+        bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
@@ -281,11 +285,11 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthBEDA_LB_DialogFragment(boolean[] pattern) {
-        authDialog = new BlSiBDialogFragment();
+        authDialog = new LEDBlinkAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
-        bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
-        bundle.putBooleanArray(BarSibDialogFragment.AUTH_BLSIBARRAY, pattern);
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA LED-Button");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device as long as LED is bright");
+        bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
@@ -293,34 +297,30 @@ public class UsdpMainActivity extends AppCompatActivity {
     }
 
     private void showAuthBarcodeDialogFragment(Bitmap bmp) {
-        authDialog = new BarSibDialogFragment();
+        authDialog = new BarSibAuthDialogFragment();
         Bundle bundle = new Bundle();
         int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
         bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBcode: Scan Barcode");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with image on other device");
-        bundle.putIntArray(BarSibDialogFragment.BARCODE_CODE, pixels);
-        bundle.putInt(BarSibDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
-        bundle.putInt(BarSibDialogFragment.BARCODE_WIDTH, bmp.getWidth());
+        bundle.putIntArray(BarSibAuthDialogFragment.BARCODE_CODE, pixels);
+        bundle.putInt(BarSibAuthDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
+        bundle.putInt(BarSibAuthDialogFragment.BARCODE_WIDTH, bmp.getWidth());
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authbarsib");
         }
     }
 
-    private void showBEDABtnDialogFragment() {
-        authDialog = new BEDAButtonDialogFragment();
+    private void showBEDARecBtnDialogFragment(String title, String info) {
+        authDialog = new BEDA_BtnAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA_VB");
-        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button when triggered by vibration");
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
+        bundle.putString(AuthDialogFragment.AUTH_INFO, info);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "beda_vb");
         }
-    }
-
-    public void oobDataReceived(String data) {
-        sendMsgtoService(Message.obtain(null, UsdpService.MSG_REQST_OOB_DATA, data));
     }
 
 
@@ -389,15 +389,40 @@ public class UsdpMainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //sendMsgtoService(Message.obtain(null, UsdpService.MSG_SENDCHATMSG, et_authtext.getText().toString()));
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(UsdpMainActivity.this);
+                LayoutInflater inflater = UsdpMainActivity.this.getLayoutInflater();
+                final View dialogView = inflater.inflate(R.layout.dialog_message, null);
+                dialogBuilder.setView(dialogView);
 
-                String res = "";
+                final EditText et_msg = (EditText) dialogView.findViewById(R.id.et_msg);
+
+                dialogBuilder.setTitle("Send encrypted message");
+                dialogBuilder.setMessage("Enter text below");
+                dialogBuilder.setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        String res = et_msg.getText().toString();
+                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_SEND_ENCRYPTED, res));
+                    }
+                });
+                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        //pass
+                    }
+                });
+                AlertDialog b = dialogBuilder.create();
+                b.show();
+
+
+
+
+
+                /*String res = "";
                 for (Character x : dtmfCharacters) {
                     res += x + "/";
                 }
 
                 Log.d("GODRESULT", res);
-                dtmfCharacters.clear();
+                dtmfCharacters.clear();*/
             }
         });
 
@@ -608,8 +633,9 @@ public class UsdpMainActivity extends AppCompatActivity {
         // only one message sent during the beam
         NdefMessage msg = (NdefMessage) rawMsgs[0];
         // record 0 contains the MIME type, record 1 is the AAR, if present
-
-        Toast.makeText(UsdpMainActivity.this, "NFC message received! " + new String(msg.getRecords()[0].getPayload()), Toast.LENGTH_SHORT).show();
+        String data = new String(msg.getRecords()[0].getPayload());
+        oobResult(data);
+        Toast.makeText(UsdpMainActivity.this, "NFC message received! " + data, Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
     }
 
@@ -681,6 +707,7 @@ public class UsdpMainActivity extends AppCompatActivity {
 
             if (resultCode == RESULT_OK) {
                 String contents = data.getStringExtra("SCAN_RESULT");
+                oobResult(contents);
                 Toast.makeText(UsdpMainActivity.this, contents, Toast.LENGTH_SHORT).show();
             }
             if (resultCode == RESULT_CANCELED) {
@@ -706,6 +733,10 @@ public class UsdpMainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    public void acceptOobAuthentication() {
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH));
     }
 
     private void manageAuthenticationDialog(OOBData oobData) {
@@ -771,14 +802,14 @@ public class UsdpMainActivity extends AppCompatActivity {
                     //vibrate
                     showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
                 } else {
-                    showBEDABtnDialogFragment();
+                    showBEDARecBtnDialogFragment("BEDA Vibrate Button", "press button when triggered by vibration");
                 }
                 break;
             case OOBData.BEDA_LB:
                 if (oobData.isSendingDevice()) {
                     showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
                 } else {
-                    showBEDABtnDialogFragment();
+                    showBEDARecBtnDialogFragment("BEDA LED Button", "press button as long as triggered by LED");
                 }
                 break;
             case OOBData.BEDA_BPBT:
@@ -787,16 +818,16 @@ public class UsdpMainActivity extends AppCompatActivity {
                     boolean[] data = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
                     playSequence(data);
                 } else {
-                    showBEDABtnDialogFragment();
+                    showBEDARecBtnDialogFragment("BEDA Beep Button", "press button as long as triggered by beeping");
                 }
                 break;
             case OOBData.BEDA_BTBT:
                 // TODO not using SAS protocol
                 if (oobData.isSendingDevice()) {
                     //button
-                    showBEDABtnDialogFragment();
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices");
                 } else {
-                    showBEDABtnDialogFragment();
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices");
                 }
                 break;
             case OOBData.HAPADEP:
@@ -854,6 +885,18 @@ public class UsdpMainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    @Override
+    public void oobResult(boolean result) {
+        if (result) {
+            sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH));
+        }
+    }
+
+    @Override
+    public void oobResult(String data) {
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH_WDATA, data));
+    }
+
     // TODO move to its own file?
     public interface MessageTarget {
         public Handler getHandler();
@@ -867,9 +910,6 @@ public class UsdpMainActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case UsdpService.MSG_SAY_HELLO:
-                    Toast.makeText(UsdpMainActivity.this, "service said hello!", Toast.LENGTH_SHORT).show();
-                    break;
                 case UsdpService.MSG_PEERSDISCOVERED:
                     List<ListDevice> devices = (List<ListDevice>) msg.obj;
                     devList.clear();

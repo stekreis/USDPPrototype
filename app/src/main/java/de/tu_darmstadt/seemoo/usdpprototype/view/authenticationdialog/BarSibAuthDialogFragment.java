@@ -17,12 +17,11 @@ import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
-import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class BarSibDialogFragment extends AuthDialogFragment {
+public class BarSibAuthDialogFragment extends AuthDialogFragment {
 
     public static final String BARCODE_CODE = "BARCODE_CODE";
     public static final String BARCODE_WIDTH = "BARCODE_WIDTH";
@@ -81,7 +80,7 @@ public class BarSibDialogFragment extends AuthDialogFragment {
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                BarSibDialogFragment.this.getDialog().cancel();
+                BarSibAuthDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();

@@ -17,7 +17,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.Swbu;
 /**
  * Created by kenny on 15.02.16.
  */
-public class AuthInfoDialogFragment extends AuthDialogFragment {
+public class InfoAuthDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_INFOONLY = "AUTH_INFO_ONLY";
     private static final String LOGTAG = "AuthInfoDialogFrag";
@@ -56,7 +56,7 @@ public class AuthInfoDialogFragment extends AuthDialogFragment {
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                AuthInfoDialogFragment.this.getDialog().cancel();
+                InfoAuthDialogFragment.this.getDialog().cancel();
                 sif.stopSensor();
             }
         });

@@ -8,8 +8,6 @@ import java.math.BigInteger;
 public abstract class SecureAuthentication {
 
 
-
-
     public abstract void init();
 
     public abstract int generateKey(int othrPublicVal);
@@ -17,5 +15,9 @@ public abstract class SecureAuthentication {
     public abstract int getGeneratedKeyVal();
 
     public abstract int getPublicDeviceKey();
+
+    public abstract String getHashedVal();
+
+    public abstract int getHashedIntVal();
 
 }

@@ -13,16 +13,19 @@ import javax.crypto.spec.SecretKeySpec;
  * http://www.cuelogic.com/blog/using-cipher-to-implement-cryptography-in-android/
  */
 public class UsdpCipher {
-    private String iv = "fedcba9876543210";
+    //private String iv = "fedcba9876543210";
+    private String iv = "5e6b4b0d3255bfef";
+
     private IvParameterSpec ivParSpec;
     private SecretKeySpec secKeySpec;
     private Cipher cipher;
-    private String secretKey = "123456";
+    private String secretKey = "fedcba9876543210";
 
 
-    public UsdpCipher() {
+    public UsdpCipher(String secretKey) {
+        this.secretKey = this.secretKey.substring(0, this.secretKey.length() - secretKey.length()) + secretKey;
         ivParSpec = new IvParameterSpec(iv.getBytes());
-        secKeySpec = new SecretKeySpec(secretKey.getBytes(), "aes");
+        secKeySpec = new SecretKeySpec(this.secretKey.getBytes(), "aes");
 
         try {
 
@@ -90,4 +93,22 @@ public class UsdpCipher {
         }
         return encrypted;
     }
+
+
+    public byte[] decrypt(String text) throws Exception {
+        if (text == null || text.length() == 0)
+            throw new Exception("Empty string");
+
+        byte[] decrypted = null;
+        try {
+// Cipher.DECRYPT_MODE = Constant for decryption operation mode.
+            cipher.init(Cipher.DECRYPT_MODE, secKeySpec, ivParSpec);
+
+            decrypted = cipher.doFinal(hexToBytes(text));
+        } catch (Exception e) {
+            throw new Exception("[decrypt] " + e.getMessage());
+        }
+        return decrypted;
+    }
+
 }

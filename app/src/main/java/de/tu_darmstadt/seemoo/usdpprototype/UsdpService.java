@@ -19,11 +19,14 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.scottyab.aescrypt.AESCrypt;
+
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,6 +36,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.UsdpCipher;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
@@ -92,6 +96,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_WIFIDEVICE_CHANGED = 22;
     public static final int MSG_DISCONNECT = 23;
     public static final int MSG_ABRT_CONN = 24;
+    public static final int MSG_ACCEPT_AUTH = 25;
+    public static final int MSG_ACCEPT_AUTH_WDATA = 26;
+    public static final int MSG_SEND_ENCRYPTED = 27;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
     private SecureAuthentication secureAuthentication = null;
@@ -108,6 +115,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private AuthMechManager authMechManager;
     private DeviceCapabilities deviceCapabilities;
 
+    private UsdpCipher cipher;
+
     private WifiP2pDevice thisDevice;
 
     private UsdpPacket remoteDevice;
@@ -118,8 +127,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
      */
     @Override
     public IBinder onBind(Intent intent) {
-
-        Toast.makeText(getApplicationContext(), "binding", Toast.LENGTH_SHORT).show();
+        Log.d(LOGTAG, "service binding");
         return mMessenger.getBinder();
     }
 
@@ -268,6 +276,22 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         Log.d(LOGTAG, readMessage);
                         sendMsgToActivity(Message.obtain(null, MSG_CHATMSGRECEIVED, readMessage));
                         break;
+                    case MessageManager.MSGTYPE_ENCR:
+                        byte[] recData2 = (byte[]) msg.obj;
+                        byte[] data2 = new byte[recData2[1]];
+                        System.arraycopy(recData2, 2, data2, 0, recData2[1]);
+                        String encryptedMsg = new String(data2);
+                        //Toast.makeText(getApplicationContext(), "testTEST " + encryptedMsg, Toast.LENGTH_LONG).show();
+                        String password = String.valueOf(secureAuthentication.getGeneratedKeyVal());
+
+                        String messageAfterDecrypt = "";
+                        try {
+                            messageAfterDecrypt = AESCrypt.decrypt(password, encryptedMsg);
+                        } catch (GeneralSecurityException e) {
+                            //handle error - could be due to incorrect password or tampered encryptedMsg
+                        }
+                        Toast.makeText(getApplicationContext(), "\\n\n" + encryptedMsg + "\\n\n" + messageAfterDecrypt, Toast.LENGTH_LONG).show();
+                        break;
                     case MessageManager.MSGTYPE_INAUTH:
                         sendMsgToActivity(Message.obtain(null,
                                 AUTH_BARCODE, Helper.generateQR("jet fuel")));
@@ -342,7 +366,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         byte[] actualData = new byte[recAuthData.length - 1];
                         System.arraycopy(recAuthData, 1, actualData, 0, recAuthData.length - 1);
                         OOBData prettyData2 = (OOBData) SerializationUtils.deserialize(actualData);
-                        prettyData2.setAuthdata(secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()));
+                        secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey());
+                        prettyData2.setAuthdata(secureAuthentication.getHashedIntVal());
                         Message retmsg = Message.obtain(null,
                                 MSG_AUTHENTICATION_DIALOG_DATA, prettyData2);
                         sendMsgToActivity(retmsg);
@@ -397,6 +422,10 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         }
     }
 
+    private void setCipher(String key) {
+        cipher = new UsdpCipher(key);
+    }
+
     /**
      * inner class, handles messages from @UsdpMainActivity
      */
@@ -404,16 +433,14 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         @Override
         public void handleMessage(final Message msg) {
             switch (msg.what) {
-                case MSG_SAY_HELLO:
-                    Toast.makeText(getApplicationContext(), "ACTSEND, Service says: hello!", Toast.LENGTH_SHORT).show();
-                    break;
                 case MSG_UNPAIR:
                     //TODO: unpair
                     break;
                 case MSG_REQST_OOB_DATA:
                     String authdataRem = (String) msg.obj;
                     // TODO change from string to int comparison
-                    if (authdataRem.equals(String.valueOf(secureAuthentication.getGeneratedKeyVal()))) {
+
+                    if (authdataRem.equals(String.valueOf(secureAuthentication.getHashedIntVal()))) {
                         Log.d(LOGTAG, "oobdata correct!");
                     } else {
                         Log.d(LOGTAG, "oobdata not correct!");
@@ -431,7 +458,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                     matches = true;
                                     Log.d(LOGTAG, "found match thissend");
                                     //this device sends, remote device receives
-                                    OOBData data = new OOBData(authMechStr, secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()), true);
+                                    secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey());
+                                    OOBData data = new OOBData(authMechStr, secureAuthentication.getHashedIntVal(), true);
                                     Message retmsg = Message.obtain(null,
                                             MSG_AUTHENTICATION_DIALOG_DATA, data);
                                     sendMsgToActivity(retmsg);
@@ -459,7 +487,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                         matches = true;
                                         Log.d(LOGTAG, "found match thisreceive");
                                         //remote device sends, this device receives
-                                        OOBData data = new OOBData(authMechStr, secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey()), false);
+                                        secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey());
+                                        OOBData data = new OOBData(authMechStr, secureAuthentication.getHashedIntVal(), false);
                                         Message retmsg = Message.obtain(null,
                                                 MSG_AUTHENTICATION_DIALOG_DATA, data);
                                         sendMsgToActivity(retmsg);
@@ -479,19 +508,16 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     sendMsgToActivity(authMechsMsg);*/
                     break;
                 case MSG_REGISTER_CLIENT:
-                    Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client registered", Toast.LENGTH_SHORT).show();
+                    Log.d(LOGTAG, "ACTSEND, Service says: client registered");
                     activityMessenger = msg.replyTo;
                     sendMsgToActivity(Message.obtain(null, MSG_WIFIDEVICE_CHANGED, thisDevice));
                     break;
                 case MSG_UNREGISTER_CLIENT:
-                    Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client unregistered", Toast.LENGTH_SHORT).show();
+                    Log.d(LOGTAG, "ACTSEND, Service says: client unregistered");
                     break;
                 case MSG_CONFIG:
-                    Toast.makeText(getApplicationContext(), "Service started. Device config transmitted", Toast.LENGTH_SHORT).show();
+                    Log.d(LOGTAG, "Service started. Device config transmitted");
                     deviceCapabilities = (DeviceCapabilities) msg.obj;
-
-                    sendMsgToActivity(Message.obtain(null,
-                            MSG_SAY_HELLO));
                     break;
                 case MSG_TEST:
                     Log.d(LOGTAG, "testmsg received");
@@ -522,6 +548,18 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     if (devi != null) {
                         wifiP2pManager.cancelConnect(mChannel, null);
                     }
+                    break;
+                case MSG_ACCEPT_AUTH_WDATA:
+                    final String data = (String) msg.obj;
+                    String val = String.valueOf(secureAuthentication.getHashedIntVal());
+                    if (val.equals(data)) {
+                        Toast.makeText(getApplicationContext(), "accepting data: " + val, Toast.LENGTH_SHORT).show();
+                        setCipher(String.valueOf(secureAuthentication.getGeneratedKeyVal()));
+                    }
+                    break;
+                case MSG_ACCEPT_AUTH:
+                    Toast.makeText(getApplicationContext(), "accepting", Toast.LENGTH_SHORT).show();
+                    setCipher(String.valueOf(secureAuthentication.getGeneratedKeyVal()));
                     break;
                 case MSG_CONNECT:
                     final String connDevAddr = msg.obj.toString();
@@ -559,10 +597,10 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                                     }
                                     int publicKey = secureAuthentication.getPublicDeviceKey();
 
-                                    byte[] data = SerializationUtils.serialize(new UsdpPacket("uniqueID", "protVersion1.0", publicKey));
-                                    ByteBuffer target = ByteBuffer.allocate(data.length + 1);
+                                    byte[] data2 = SerializationUtils.serialize(new UsdpPacket("uniqueID", "protVersion1.0", publicKey));
+                                    ByteBuffer target = ByteBuffer.allocate(data2.length + 1);
                                     target.put(MessageManager.MSGTYPE_HELLO);
-                                    target.put(data);
+                                    target.put(data2);
                                     messageManager.write(target.array());
                                 }
                                 Toast.makeText(getApplicationContext(), "pairing in progress...", Toast.LENGTH_SHORT).show();
@@ -630,6 +668,28 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         String text = (String) msg.obj;
                         messageManager.write(text.getBytes());
                     }
+                case MSG_SEND_ENCRYPTED:
+                    if (messageManager != null) {
+                        String text = (String) msg.obj;
+                        String password = String.valueOf(secureAuthentication.getGeneratedKeyVal());
+
+                        String encryptedMsg = "";
+                        try {
+                            encryptedMsg = AESCrypt.encrypt(password, text);
+                        } catch (GeneralSecurityException e) {
+                            //handle error
+                        }
+
+                        byte[] encrData = encryptedMsg.getBytes();
+                        //byte[] encrData = text.getBytes();
+                        ByteBuffer target = ByteBuffer.allocate(encrData.length + 2);
+                        target.put(MessageManager.MSGTYPE_ENCR);
+                        // encrypted messages have a max length
+                        target.put((byte) encrData.length);
+                        target.put(encrData);
+                        messageManager.write(target.array());
+                    }
+                    break;
                 default:
                     super.handleMessage(msg);
             }

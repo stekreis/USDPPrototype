@@ -4,7 +4,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -18,17 +17,20 @@ import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.view.CameraSurfaceView;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class CameraDialogFragment extends AuthDialogFragment {
+public class CamAuthDialogFragment extends AuthDialogFragment {
 
     //    public static final String BARCODE_CODE = "BARCODE_CODE";
     public static final String BARCODE_WIDTH = "BARCODE_WIDTH";
     public static final String BARCODE_HEIGHT = "BARCODE_HEIGHT";
 
     private static final String LOGTAG = "AuthBarcodeDialogFrag";
+
+    CameraSurfaceView mPreview;
 
     /**
      * A safe way to get an instance of the Camera object.
@@ -89,12 +91,12 @@ public class CameraDialogFragment extends AuthDialogFragment {
 
         // TODO maybe switch to camera2 API
         Camera cam = getCameraInstance();
-        if(cam!= null) {
+        if (cam != null) {
 
-            CameraSurfaceView mPreview = new CameraSurfaceView(getContext(), cam);
+            mPreview = new CameraSurfaceView(getContext(), cam);
             FrameLayout preview = (FrameLayout) view.findViewById(R.id.camera_preview);
             preview.addView(mPreview);
-        }else{
+        } else {
             Toast.makeText(getContext(), "camera failed", Toast.LENGTH_SHORT).show();
         }
 
@@ -104,12 +106,15 @@ public class CameraDialogFragment extends AuthDialogFragment {
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-
+                if (mPreview != null) {
+                    UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                    activity.oobResult(mPreview.getCaptSeq());
+                }
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                CameraDialogFragment.this.getDialog().cancel();
+                CamAuthDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();

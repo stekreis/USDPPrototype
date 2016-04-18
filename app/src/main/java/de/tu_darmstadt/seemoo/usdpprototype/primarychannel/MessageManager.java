@@ -26,6 +26,7 @@ public class MessageManager implements Runnable {
     public static final byte MSGTYPE_HELLO = 4;
     public static final byte MSGTYPE_HELLOBACK = 5;
     public static final byte MSGTYPE_AUTH_DIALOG = 6;
+    public static final byte MSGTYPE_ENCR = 7;
 
     private Socket socket = null;
     private Handler handler;

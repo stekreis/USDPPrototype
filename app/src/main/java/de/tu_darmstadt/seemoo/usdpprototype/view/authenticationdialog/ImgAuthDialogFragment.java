@@ -3,15 +3,15 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
@@ -19,11 +19,14 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 /**
  * Created by kenny on 15.02.16.
  */
-public class VicPDialogFragment extends AuthDialogFragment {
-
-    private static final String LOGTAG = "VicPDialogFrag";
+public class ImgAuthDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_VICP = "AUTH_VICP";
+    public static final String IMG_WIDTH = "IMG_WIDTH";
+    public static final String IMG_HEIGHT = "IMG_HEIGHT";
+    public static final String IMG_IMAGE = "IMG_IMAGE";
+    private static final String LOGTAG = "AuthImgDialogFrag";
+    private Bitmap image = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,24 +46,33 @@ public class VicPDialogFragment extends AuthDialogFragment {
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
 
-        View view = layoutInflater.inflate(R.layout.dialog_auth_phrase, null);
+        View view = layoutInflater.inflate(R.layout.dialog_auth_img, null);
 
-        TextView tv = (TextView) view.findViewById(R.id.tv_vicp);
-        String text = bundle.getString(AUTH_VICP);
-        tv.setText(text);
+        TextView tv_title = (TextView) view.findViewById(R.id.tv_authdialog_title);
+        tv_title.setText(title);
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authdialog_info);
+        tv_info.setText(info);
+
+        ImageView iv_image = (ImageView) view.findViewById(R.id.iv_image);
+        int width = bundle.getInt(IMG_WIDTH);
+        int height = bundle.getInt(IMG_HEIGHT);
+        image = Bitmap.createBitmap((int[]) getArguments().get(IMG_IMAGE), 0, width, width, height, Bitmap.Config.ARGB_8888);
+        iv_image.setImageBitmap(image);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                VicPDialogFragment.this.getDialog().cancel();
+                ImgAuthDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();
     }
+
 
 }

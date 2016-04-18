@@ -9,7 +9,7 @@ import android.support.v4.app.DialogFragment;
  */
 public class AuthDialogFragment extends DialogFragment {
 
-    public static final String AUTH_BLSIBARRAY = "AUTH_BLSIBARRAY";
+    public static final String AUTH_PATTERN = "AUTH_PATTERN";
     public static final String AUTH_TITLE = "AUTH_TITLE";
     public static final String AUTH_INFO = "AUTH_INFO";
 
@@ -30,6 +30,11 @@ public class AuthDialogFragment extends DialogFragment {
             info = pInfo;
         }
 
+    }
+
+    public interface oobResultInterface {
+        void oobResult(boolean result);
+        void oobResult(String data);
     }
 
     public boolean isFragmentUIActive() {

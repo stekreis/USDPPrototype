@@ -18,6 +18,8 @@ import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+
 /**
  * Created by kenny on 08.02.16.
  */
@@ -25,16 +27,20 @@ public class SecAuthVIC extends SecureAuthentication {
 
     public final static int pValue = 913247;
     public final static int gValue = 370934;
-    private static int bitlength = 20;
-    private static final String LOGTAG = "SecAuthVIC";
-    private static final int BITLENGTHMAX = 32;
     public static final int OOB_BITLENGTH = 20;
+    private static final String LOGTAG = "SecAuthVIC";
+    private static final int BITLENGTHMAX = 512;
+    private static int bitlength = 256;
     private BigInteger priv;
     private BigInteger pub;
 
     private int generatedKey = 0;
 
     public static String toMD5(byte[] convertible) {
+        return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
+    }
+
+    public static String toMD5(String convertible) {
         return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
     }
 
@@ -69,11 +75,25 @@ public class SecAuthVIC extends SecureAuthentication {
         return generatedKey = otherPublicVal.modPow(priv, pVal).intValue();
     }
 
+
     public int getGeneratedKeyVal() {
         return generatedKey;
     }
 
     public int getPublicDeviceKey() {
         return pub.intValue();
+    }
+
+    @Override
+    public String getHashedVal() {
+        return toMD5(String.valueOf(generatedKey)).substring(0, 5);
+    }
+
+    @Override
+    public int getHashedIntVal() {
+        Log.d(LOGTAG, "genPkey:"+generatedKey);
+        int hashedkey =Helper.hex2decimal(getHashedVal());
+        Log.d(LOGTAG, "genHkey:"+hashedkey);
+        return hashedkey;
     }
 }
