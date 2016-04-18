@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
@@ -73,31 +74,33 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
                 });
             }
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-            if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
+            if (mManager == null) {
+                return;
+            }
 
-                if (mManager == null) {
-                    return;
-                }
+            NetworkInfo networkInfo = (NetworkInfo) intent
+                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
-                NetworkInfo networkInfo = (NetworkInfo) intent
-                        .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+            if (networkInfo.isConnected()) {
 
-                if (networkInfo.isConnected()) {
+                // we are connected with the other device, request connection
+                // info to find group owner IP
+                Log.d(LOGTAG,
+                        "Connected to p2p network. Requesting network details");
+                mManager.requestConnectionInfo(mChannel,
+                        (WifiP2pManager.ConnectionInfoListener) mService);
+            } else {
+                // It's a disconnect
+            }
 
-                    // we are connected with the other device, request connection
-                    // info to find group owner IP
-                    Log.d(LOGTAG,
-                            "Connected to p2p network. Requesting network details");
-                    mManager.requestConnectionInfo(mChannel,
-                            (WifiP2pManager.ConnectionInfoListener) mService);
-                } else {
-                    // It's a disconnect
-                }
-
-            } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-                // Respond to this device's wifi state changing
+        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
+            // Respond to this device's wifi state changing
+            WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+            if (mService != null) {
+                mService.deviceChanged(device);
             }
         }
+
     }
 }
 

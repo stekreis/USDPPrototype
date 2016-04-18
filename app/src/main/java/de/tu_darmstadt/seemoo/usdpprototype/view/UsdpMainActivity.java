@@ -22,18 +22,19 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.Parcelable;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -71,6 +72,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.identicons.Identicon;
 public class UsdpMainActivity extends AppCompatActivity {
 
     private static final String LOGTAG = "UsdpMainActivity";
+    private final static int CTXM_SENDMSG = 0;
+    private final static int CTXM_GETRPRT = 1;
+    private final static int CTXM_DISCONN = 2;
+    private static final int CTXM_CNCLINV = 3;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final ArrayList<Character> dtmfCharacters = new ArrayList<>();
     private final AudioProcessor goertzelAudioProcessor = new Goertzel(44100, 256, DTMF.DTMF_FREQUENCIES, new Goertzel.FrequenciesDetectedHandler() {
@@ -108,18 +113,14 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         }
     });
-
     private NfcAdapter mNfcAdapter;
     private DeviceCapabilities devCap = new DeviceCapabilities();
     //UI
     private ListView lv_discoveredDevices;
     private DeviceArrayAdapter la_discoveredDevices;
     private ArrayList<ListDevice> devList = new ArrayList<>();
-    private EditText et_authtext;
     private AuthDialogFragment authDialog;
-
     private TextView tv_status;
-
     // Service connection
     private Messenger mService = null;
     private Intent bindServiceIntent;
@@ -370,7 +371,13 @@ public class UsdpMainActivity extends AppCompatActivity {
                         return true;
                     case R.id.mnu_get_report:
                         ReportDialogFragment rdf = new ReportDialogFragment();
-                        rdf.show(getSupportFragmentManager(),"report");
+                        rdf.show(getSupportFragmentManager(), "report");
+                        break;
+                    case R.id.mnu_test:
+                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR));
+                        break;
+                    case R.id.mnu_wifi_settings:
+                        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
                         break;
                 }
                 return false;
@@ -412,18 +419,8 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        Button btn_pair = (Button) findViewById(R.id.btn_pair);
-        btn_pair.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR));
-            }
-        });
 
         tv_status = (TextView) findViewById(R.id.status);
-        setStateInfo();
-
-        et_authtext = (EditText) findViewById(R.id.et_text);
 
         ToggleButton btn_toggleSvc = (ToggleButton) findViewById(R.id.btn_toggleSvc);
         btn_toggleSvc.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -442,7 +439,7 @@ public class UsdpMainActivity extends AppCompatActivity {
             }
         });
 
-        devList.add(new ListDevice("press \"Discover devices\"", "No other devices found", WifiP2pDevice.UNAVAILABLE));
+        devList.add(new ListDevice("press \"Discover devices\"", "No other devices found", WifiP2pDevice.UNAVAILABLE, false));
 
         la_discoveredDevices = new DeviceArrayAdapter(getApplicationContext(), devList);
         lv_discoveredDevices = (ListView) findViewById(R.id.lv_discoveredDev);
@@ -460,7 +457,9 @@ public class UsdpMainActivity extends AppCompatActivity {
         });
 
 
-        // TODO request other device to remove group
+        registerForContextMenu(lv_discoveredDevices);
+
+/*        // TODO request other device to remove group
         lv_discoveredDevices.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
@@ -469,7 +468,68 @@ public class UsdpMainActivity extends AppCompatActivity {
 
                 return true;
             }
-        });
+        });*/
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+        if (v.getId() == R.id.lv_discoveredDev) {
+            ListView lv = (ListView) v;
+            AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) menuInfo;
+            ListDevice selDevice = (ListDevice) lv.getItemAtPosition(acmi.position);
+            menu.setHeaderTitle("Device actions (" + selDevice.getName() + ")");
+            menu.add(Menu.NONE, CTXM_SENDMSG, CTXM_SENDMSG, R.string.send_message);
+            menu.add(Menu.NONE, CTXM_GETRPRT, CTXM_GETRPRT, R.string.get_report);
+            if (selDevice.getState() == WifiP2pDevice.CONNECTED) {
+                menu.add(Menu.NONE, CTXM_DISCONN, CTXM_DISCONN, R.string.disconnect);
+            } else if (selDevice.getState() == WifiP2pDevice.INVITED) {
+                menu.add(Menu.NONE, CTXM_CNCLINV, CTXM_CNCLINV, R.string.cancel_invite);
+            }
+        }
+
+
+/*
+        menu.add(0, v.getId(), 0, "send Message");
+        menu.add(0, v.getId(), 0, "get report");
+        menu.add(0, v.getId(), 0, "Disconnect");
+*/
+    }
+
+    private void showShortToast(String text) {
+        Toast.makeText(UsdpMainActivity.this, text, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showLongToast(String text) {
+        Toast.makeText(UsdpMainActivity.this, text, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
+                .getMenuInfo();
+        String selectedDeviceMac = ((TextView) info.targetView.findViewById(android.R.id.text2)).getText().toString();
+        switch (item.getItemId()) {
+            case CTXM_SENDMSG:
+                showShortToast("sendMsg " + selectedDeviceMac);
+                return true;
+            case CTXM_GETRPRT:
+                showShortToast("getrep");
+                return true;
+            case CTXM_DISCONN:
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_DISCONNECT, selectedDeviceMac));
+                showShortToast("disconn");
+                return true;
+            case CTXM_CNCLINV:
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_ABRT_CONN, selectedDeviceMac));
+                showShortToast("cncl invit");
+                return true;
+
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 
     private void playSequence(final boolean[] data) {
@@ -490,8 +550,15 @@ public class UsdpMainActivity extends AppCompatActivity {
         thread.start();
     }
 
-    private void setStateInfo() {
-        tv_status.setText("Connected Devices:\t" + 1337 + "\ncheck");
+    private void setStateInfo(WifiP2pDevice dev) {
+        String devName = dev.deviceName;
+        if (dev.isGroupOwner()) {
+            devName += " (GO)";
+        }
+        String devAddress = dev.deviceAddress;
+        tv_status.setText("Device info:\n" + devName
+                + " (" + devAddress + ")");
+
     }
 
     private void playSequence(final ArrayList<Integer> digits) {
@@ -807,11 +874,17 @@ public class UsdpMainActivity extends AppCompatActivity {
                     List<ListDevice> devices = (List<ListDevice>) msg.obj;
                     devList.clear();
                     if (devices.isEmpty()) {
-                        devList.add(new ListDevice("press \"Discover Devices\"", "No other devices found", WifiP2pDevice.UNAVAILABLE));
+                        devList.add(new ListDevice("press \"Discover Devices\"", "No other devices found", WifiP2pDevice.UNAVAILABLE, false));
                     } else {
                         devList.addAll(devices);
                     }
                     la_discoveredDevices.notifyDataSetChanged();
+                    break;
+
+                case UsdpService.MSG_WIFIDEVICE_CHANGED:
+                    WifiP2pDevice dev = (WifiP2pDevice) msg.obj;
+
+                    setStateInfo(dev);
                     break;
                 case UsdpService.MSG_AUTHMECHS:
                     AlertDialog.Builder authMechDialog = new AlertDialog.Builder(UsdpMainActivity.this);

@@ -8,13 +8,22 @@ import android.net.wifi.p2p.WifiP2pDevice;
 public class ListDevice {
     private String address = "";
     private String name = "";
-
+    private boolean isGroupOwner;
     private int state = WifiP2pDevice.AVAILABLE;
 
-    public ListDevice(String address, String name, int state) {
+    public ListDevice(String address, String name, int state, boolean isGroupOwner) {
         this.address = address;
         this.name = name;
         this.state = state;
+        this.isGroupOwner = isGroupOwner;
+    }
+
+    public boolean isGroupOwner() {
+        return isGroupOwner;
+    }
+
+    public void setGroupOwner(boolean groupOwner) {
+        isGroupOwner = groupOwner;
     }
 
     public String getAddress() {

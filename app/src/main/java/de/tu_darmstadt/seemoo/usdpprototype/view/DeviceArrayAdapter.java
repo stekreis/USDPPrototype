@@ -33,7 +33,11 @@ public class DeviceArrayAdapter extends TwoLineArrayAdapter<ListDevice> {
 
     @Override
     public String lineOneText(ListDevice e) {
-        return e.getName();
+        String ret = e.getName();
+        if(e.isGroupOwner()){
+            ret+=" (GO)";
+        }
+        return ret;
     }
 
     @Override

@@ -8,6 +8,7 @@ import android.content.res.AssetManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
@@ -88,6 +89,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_AUTHENTICATION_DIALOG_DATA_REM = 19;
     public static final int MSG_UNPAIR = 20;
     public static final int MSG_REQST_OOB_DATA = 21;
+    public static final int MSG_WIFIDEVICE_CHANGED = 22;
+    public static final int MSG_DISCONNECT = 23;
+    public static final int MSG_ABRT_CONN = 24;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
     private SecureAuthentication secureAuthentication = null;
@@ -103,6 +107,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private MessageManager messageManager;
     private AuthMechManager authMechManager;
     private DeviceCapabilities deviceCapabilities;
+
+    private WifiP2pDevice thisDevice;
 
     private UsdpPacket remoteDevice;
 
@@ -160,6 +166,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
         // wifip2p logic
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+
         mChannel = wifiP2pManager.initialize(this, getMainLooper(), null);
         mReceiver = new WiFiDirectBroadcastReceiver(wifiP2pManager, mChannel, this);
 
@@ -180,7 +187,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
             device = peer;
             String deviceaddr = device.deviceAddress;
             discoveredDevices.put(deviceaddr, device);
-            listdevices.add(new ListDevice(deviceaddr, device.deviceName, device.status));
+            listdevices.add(new ListDevice(deviceaddr, device.deviceName, device.status, device.isGroupOwner()));
             Log.d(LOGTAG, deviceaddr + " found");
         }
         if (activityMessenger != null) {
@@ -191,10 +198,12 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     }
 
     private void sendMsgToActivity(Message msg) {
-        try {
-            activityMessenger.send(msg);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+        if (activityMessenger != null) {
+            try {
+                activityMessenger.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -353,6 +362,40 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         Log.d(LOGTAG, "messman was set" + obj);
     }
 
+    public void deviceChanged(WifiP2pDevice device) {
+        if (device != null) {
+            thisDevice = device;
+            Message retmsg = Message.obtain(null,
+                    MSG_WIFIDEVICE_CHANGED, device);
+            sendMsgToActivity(retmsg);
+        }
+
+    }
+
+    public void disconnect() {
+        if (wifiP2pManager != null && mChannel != null) {
+            wifiP2pManager.requestGroupInfo(mChannel, new WifiP2pManager.GroupInfoListener() {
+                @Override
+                public void onGroupInfoAvailable(WifiP2pGroup group) {
+                    if (group != null && wifiP2pManager != null && mChannel != null
+                            && group.isGroupOwner()) {
+                        wifiP2pManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+
+                            @Override
+                            public void onSuccess() {
+                                Log.d(LOGTAG, "removeGroup onSuccess -");
+                            }
+
+                            @Override
+                            public void onFailure(int reason) {
+                                Log.d(LOGTAG, "removeGroup onFailure -" + reason);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
 
     /**
      * inner class, handles messages from @UsdpMainActivity
@@ -372,8 +415,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     // TODO change from string to int comparison
                     if (authdataRem.equals(String.valueOf(secureAuthentication.getGeneratedKeyVal()))) {
                         Log.d(LOGTAG, "oobdata correct!");
-                    }
-                    else{
+                    } else {
                         Log.d(LOGTAG, "oobdata not correct!");
                     }
                     break;
@@ -439,6 +481,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 case MSG_REGISTER_CLIENT:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client registered", Toast.LENGTH_SHORT).show();
                     activityMessenger = msg.replyTo;
+                    sendMsgToActivity(Message.obtain(null, MSG_WIFIDEVICE_CHANGED, thisDevice));
                     break;
                 case MSG_UNREGISTER_CLIENT:
                     Toast.makeText(getApplicationContext(), "ACTSEND, Service says: client unregistered", Toast.LENGTH_SHORT).show();
@@ -465,6 +508,20 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                         }
                     });
+                    break;
+                case MSG_DISCONNECT:
+                    final String disConnDevAddr = msg.obj.toString();
+                    WifiP2pDevice devc = discoveredDevices.get(disConnDevAddr);
+                    if (devc != null) {
+                        disconnect();
+                    }
+                    break;
+                case MSG_ABRT_CONN:
+                    final String cnclConnDevAddr = msg.obj.toString();
+                    WifiP2pDevice devi = discoveredDevices.get(cnclConnDevAddr);
+                    if (devi != null) {
+                        wifiP2pManager.cancelConnect(mChannel, null);
+                    }
                     break;
                 case MSG_CONNECT:
                     final String connDevAddr = msg.obj.toString();

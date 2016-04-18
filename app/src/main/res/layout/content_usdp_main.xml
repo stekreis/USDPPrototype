@@ -12,55 +12,50 @@
     tools:context=".view.UsdpMainActivity"
     tools:showIn="@layout/activity_usdp_main">
 
-    <Button
+    <ToggleButton
+        android:id="@+id/btn_toggleSvc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/btn_discover"
-        android:id="@+id/btn_discover"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
-    <ListView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/lv_discoveredDev"
-        android:layout_below="@+id/btn_discover"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:background="#0000ff" />
-
-    <ToggleButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New ToggleButton"
-        android:id="@+id/btn_toggleSvc"
         android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:text="New ToggleButton" />
+
     <Button
+        android:id="@+id/btn_discover"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/btn_pair"
-        android:id="@+id/btn_pair"
-        android:layout_below="@+id/lv_discoveredDev"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="text"
-        android:id="@+id/et_text"
-        android:layout_below="@+id/btn_pair"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:text="@string/btn_discover" />
 
     <TextView
+        android:id="@+id/tv_discoveredDevices"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="status"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/btn_toggleSvc"
+        android:text="Discovered Devices" />
+
+    <ListView
+        android:id="@+id/lv_discoveredDev"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/tv_discoveredDevices"
+        android:background="#0000ff" />
+
+    <TextView
         android:id="@+id/status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:singleLine="false" />
+        android:singleLine="false"
+        android:text="status" />
+
+
 </RelativeLayout>
