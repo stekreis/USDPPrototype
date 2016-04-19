@@ -349,7 +349,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                         //String[] authMechs = authMechManager.getSupportedMechs(deviceCapabilities.getValidCapabilities());
 
-                        Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, resRay);
+
+                        // HERE (resRay)
+                        Message authMechsMsg = Message.obtain(null, MSG_AUTHMECHS, res2);
 
                         sendMsgToActivity(authMechsMsg);
 

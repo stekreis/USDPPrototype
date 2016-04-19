@@ -55,6 +55,7 @@ import be.tarsos.dsp.pitch.Goertzel;
 import de.tu_darmstadt.seemoo.usdpprototype.ConnInfo;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthResult;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
@@ -976,6 +977,32 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     setStateInfo(dev);
                     break;
                 case UsdpService.MSG_AUTHMECHS:
+
+                    final AuthMechanism[] types2 = (AuthMechanism[]) msg.obj;
+
+                    AuthMechArrayAdapter  adap = new AuthMechArrayAdapter(UsdpMainActivity.this, R.layout.mech_list_item, types2);
+
+                    LayoutInflater inflater = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE));
+                    View customView = inflater.inflate(R.layout.dialog_mechlist, null, false);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(UsdpMainActivity.this);
+                    builder.setTitle("Choose authentication mechanism");
+                    builder.setAdapter(adap,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog,
+                                            int item) {
+
+                            Message msg = Message.obtain(null,
+                                    UsdpService.MSG_CHOSEN_AUTHMECH, types2[item].getShortName());
+                            sendMsgtoService(msg);
+                            dialog.dismiss();
+                        }
+                    });
+
+                    builder.setView(customView);
+                    builder.show();
+
+                    /*
                     AlertDialog.Builder authMechDialog = new AlertDialog.Builder(UsdpMainActivity.this);
                     authMechDialog.setTitle("Choose authentication mechanism");
                     final String[] types = (String[]) msg.obj;
@@ -993,7 +1020,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                         }
 
                     });
-                    authMechDialog.show();
+                    authMechDialog.show();*/
                     break;
                 case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
                     Toast.makeText(UsdpMainActivity.this, "auth shows now", Toast.LENGTH_SHORT).show();
@@ -1013,7 +1040,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                         AlertDialog alertDialog = new AlertDialog.Builder(UsdpMainActivity.this).create();
                         alertDialog.setTitle("Connection info");
                         alertDialog.setMessage(info.toString());
-                        
+
                         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int which) {
