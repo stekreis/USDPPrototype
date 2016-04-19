@@ -53,7 +53,7 @@ public class AuthMechArrayAdapter extends ArrayAdapter<AuthMechanism> {
         AuthMechanism mech = data[position];
         holder.txtTitle.setText(mech.getShortName());
         holder.secPoints.setText(mech.getSecPoints() + " SecPoints");
-        holder.imgIcon.setImageResource(R.mipmap.ic_launcher);
+        holder.imgIcon.setImageResource(R.drawable.mech_sib);
 
         return row;
     }
