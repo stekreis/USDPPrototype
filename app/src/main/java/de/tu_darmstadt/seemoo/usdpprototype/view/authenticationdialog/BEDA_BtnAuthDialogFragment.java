@@ -11,11 +11,14 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
@@ -23,7 +26,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 public class BEDA_BtnAuthDialogFragment extends AuthDialogFragment {
 
     public static final String AUTH_BTN = "AUTH_BTN";
-    private static final String LOGTAG = "VerifBtnAuthDialogFragment";
+    private static final String LOGTAG = "VerifBtnAuthDialogFrag";
+
+    // TODO improve structure
+    protected static String val ="";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,6 +51,12 @@ public class BEDA_BtnAuthDialogFragment extends AuthDialogFragment {
 
         View view = layoutInflater.inflate(R.layout.dialog_auth_btn, null);
 
+        TextView tv_title = (TextView) view.findViewById(R.id.tv_authbedabtn_title);
+        tv_title.setText(title);
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authbedabtn_info);
+        tv_info.setText(info);
+        mechType = bundle.getString(AUTH_MECHTYPE);
+
         Button userbtn = (Button) view.findViewById(R.id.btn_recauth);
 
         userbtn.setOnTouchListener(new ReceiverButtonListener());
@@ -57,12 +69,15 @@ public class BEDA_BtnAuthDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 //Intent result is received by Activity
-
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(mechType, val);
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(mechType, false);
                 BEDA_BtnAuthDialogFragment.this.getDialog().cancel();
             }
         });
@@ -94,8 +109,9 @@ class ReceiverButtonListener implements View.OnTouchListener {
             long curr = System.currentTimeMillis();
             if (curr -lastUp > UPTHRESHOLD) {
                 if(!data.isEmpty()){
-                    // TODO: send data
+
                     int val = Helper.getInt(Helper.getPrimitiveArrayMsbFront(data));
+                    BEDA_BtnAuthDialogFragment.val = String.valueOf(val);
                     Log.d(LOGTAG, "value: " + val);
                 }
                 data.clear();

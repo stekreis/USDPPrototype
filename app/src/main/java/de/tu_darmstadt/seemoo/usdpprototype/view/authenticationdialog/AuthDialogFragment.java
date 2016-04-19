@@ -12,7 +12,10 @@ public class AuthDialogFragment extends DialogFragment {
     public static final String AUTH_PATTERN = "AUTH_PATTERN";
     public static final String AUTH_TITLE = "AUTH_TITLE";
     public static final String AUTH_INFO = "AUTH_INFO";
+    public static final String AUTH_MECHTYPE = "AUTH_MECHTYPE";
+    public static final String AUTH_EXPLINFO = "AUTH_EXPLINFO";
 
+    protected String mechType = "";
     protected Bundle bundle = null;
     protected String title = "Authentication dialog";
     protected String info = "";
@@ -33,8 +36,8 @@ public class AuthDialogFragment extends DialogFragment {
     }
 
     public interface oobResultInterface {
-        void oobResult(boolean result);
-        void oobResult(String data);
+        void oobResult(String mech, boolean result);
+        void oobResult(String mech, String data);
     }
 
     public boolean isFragmentUIActive() {

@@ -42,7 +42,7 @@ public class VerifBtnAuthDialogFragment extends AuthDialogFragment {
         View view = layoutInflater.inflate(R.layout.dialog_auth_btn, null);
 
         Button userbtn = (Button) view.findViewById(R.id.btn_recauth);
-
+        mechType = bundle.getString(AUTH_MECHTYPE);
         userbtn.setOnTouchListener(new ReceiverButtonListener());
 
 /*        TextView tv = (TextView) view.findViewById(R.id.tv_vicp);
@@ -53,12 +53,14 @@ public class VerifBtnAuthDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(true);
+                activity.oobResult(mechType,true);
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(mechType,false);
                 VerifBtnAuthDialogFragment.this.getDialog().cancel();
             }
         });

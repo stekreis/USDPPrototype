@@ -17,14 +17,23 @@ import java.util.ListIterator;
 
 /**
  * Created by kenny on 06.04.16.
- * <p/>
+ * <p>
  * manages available authentication mechanisms
  */
 public class AuthMechManager {
-    private AuthMechanism[] authmechs;
+    private static AuthMechanism[] authmechs;
 
     public AuthMechManager() {
 
+    }
+
+    public static AuthMechanism getSingleMechByName(String name) {
+        for (int ipos = 0; ipos < authmechs.length; ipos++) {
+            if (authmechs[ipos].getShortName().equals(name)) {
+                return authmechs[ipos];
+            }
+        }
+        return null;
     }
 
     public boolean isCapableOf(String mech) {
@@ -101,7 +110,6 @@ public class AuthMechManager {
         return devCaps;
     }
 
-
     public void parseMechs() {
 
     }
@@ -122,7 +130,6 @@ public class AuthMechManager {
         }
         return true;
     }
-
 
     /*
     extract an array of supported authentication mechanisms based on the device capabilities
@@ -166,7 +173,6 @@ public class AuthMechManager {
         return null;
     }
 
-
     public void findComp(HashSet<String> res, String[] first, String[] second) {
         for (int firstPos = 0; firstPos < first.length; firstPos++) {
             for (int secPos = 0; secPos < second.length; secPos++) {
@@ -189,7 +195,6 @@ public class AuthMechManager {
         }
         return res;
     }
-
 
     public AuthMechanism[] sortAuthMechsBySec(String[] authmechs) {
         String[] res = new String[authmechs.length];

@@ -43,7 +43,12 @@ public class InfoAuthDialogFragment extends AuthDialogFragment {
 
         View view = layoutInflater.inflate(R.layout.dialog_auth_infoonly, null);
 
-        TextView tv = (TextView) view.findViewById(R.id.tv_authdialog_explinfo);
+        TextView tv_title = (TextView) view.findViewById(R.id.tv_authinfo_title);
+        tv_title.setText(title);
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authinfo_info);
+        tv_info.setText(info);
+
+        TextView tv = (TextView) view.findViewById(R.id.tv_authinfo_explinfo);
         String text = bundle.getString(AUTH_INFOONLY);
         tv.setText(text);
 

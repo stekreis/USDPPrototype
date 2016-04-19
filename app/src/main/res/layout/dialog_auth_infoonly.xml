@@ -5,10 +5,28 @@
     android:orientation="vertical"
     android:weightSum="1">
 
+
     <TextView
-        android:id="@+id/tv_authdialog_explinfo"
+        android:id="@+id/tv_authinfo_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.35"
+        android:text="Authentication dialog"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/tv_authinfo_explinfo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/tv_authinfo_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.35"
+        android:text="info" />
 </LinearLayout>

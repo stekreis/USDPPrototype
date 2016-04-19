@@ -6,9 +6,26 @@
     android:weightSum="1">
 
     <TextView
-        android:id="@+id/tv_vicp"
+        android:id="@+id/tv_authphrase_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.35"
+        android:text="Authentication dialog"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+    <TextView
+        android:id="@+id/tv_authphrase_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:padding="15dp"
+        android:textAlignment="center" />
+    <TextView
+        android:id="@+id/tv_authphrase_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.35"
+        android:text="info" />
 </LinearLayout>

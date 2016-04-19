@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -26,6 +27,9 @@ public class ImgAuthDialogFragment extends AuthDialogFragment {
     public static final String IMG_HEIGHT = "IMG_HEIGHT";
     public static final String IMG_IMAGE = "IMG_IMAGE";
     private static final String LOGTAG = "AuthImgDialogFrag";
+
+    private String mechType = "";
+
     private Bitmap image = null;
 
     @Override
@@ -56,6 +60,7 @@ public class ImgAuthDialogFragment extends AuthDialogFragment {
         ImageView iv_image = (ImageView) view.findViewById(R.id.iv_image);
         int width = bundle.getInt(IMG_WIDTH);
         int height = bundle.getInt(IMG_HEIGHT);
+        mechType = bundle.getString(AUTH_MECHTYPE);
         image = Bitmap.createBitmap((int[]) getArguments().get(IMG_IMAGE), 0, width, width, height, Bitmap.Config.ARGB_8888);
         iv_image.setImageBitmap(image);
 
@@ -63,11 +68,13 @@ public class ImgAuthDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(true);
+                activity.oobResult(mechType, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(mechType, false);
                 ImgAuthDialogFragment.this.getDialog().cancel();
             }
         });

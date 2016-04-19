@@ -52,8 +52,10 @@ import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.io.android.AudioDispatcherFactory;
 import be.tarsos.dsp.pitch.DTMF;
 import be.tarsos.dsp.pitch.Goertzel;
+import de.tu_darmstadt.seemoo.usdpprototype.ConnInfo;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthResult;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
@@ -206,6 +208,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     private void showAuthCamDialogFragment(String phrase) {
         authDialog = new CamAuthDialogFragment();
         Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "SibBlink");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "use camera on other device to capture blinking sequence");
         bundle.putString(CamAuthDialogFragment.AUTH_PATTERN, phrase);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
@@ -213,20 +217,51 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         }
     }
 
+    private void showAuthVicNDialogFragment(String number) {
+        authDialog = new StringAuthDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(StringAuthDialogFragment.AUTH_VICP, number);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_N);
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-N: compare numbers");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with number on other device");
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "authvicn");
+        }
+    }
+
     private void showAuthVicPDialogFragment(String phrase) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_P);
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-P: compare phrases");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with phrase on other device");
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvicp");
         }
     }
 
-    private void showAuthLacdsDialogFragment(String phrase) {
+    private void showAuthVerifDialogFragment(String title, String info, String mechtype) {
+        authDialog = new StringAuthDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
+        bundle.putString(AuthDialogFragment.AUTH_INFO, info);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, mechtype);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), title);
+        }
+    }
+
+    private void showAuthLacdsDialogFragment(String title, String info, String phrase) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
+        bundle.putString(AuthDialogFragment.AUTH_INFO, info);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.LaCDS);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authLaC_DS");
@@ -243,6 +278,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         }
     }
 
+
     private void showAuthVicIDialogFragment(Bitmap bmp) {
 
         authDialog = new ImgAuthDialogFragment();
@@ -254,6 +290,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putIntArray(ImgAuthDialogFragment.IMG_IMAGE, pixels);
         bundle.putInt(ImgAuthDialogFragment.IMG_HEIGHT, bmp.getHeight());
         bundle.putInt(ImgAuthDialogFragment.IMG_WIDTH, bmp.getWidth());
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_I);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvici");
@@ -266,6 +303,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.SiBBlink);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
@@ -276,7 +314,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         authDialog = new BEDA_VibAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA Vibrate-Button");
-        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device when vibrating");
+        bundle.putString(AuthDialogFragment.AUTH_EXPLINFO, "press button on other device when vibrating");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "press OK when finished");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
@@ -290,6 +329,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA LED-Button");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device as long as LED is bright");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.BEDA_LB);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
@@ -306,17 +346,19 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putIntArray(BarSibAuthDialogFragment.BARCODE_CODE, pixels);
         bundle.putInt(BarSibAuthDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
         bundle.putInt(BarSibAuthDialogFragment.BARCODE_WIDTH, bmp.getWidth());
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.SiB);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authbarsib");
         }
     }
 
-    private void showBEDARecBtnDialogFragment(String title, String info) {
+    private void showBEDARecBtnDialogFragment(String title, String info, String bedaType) {
         authDialog = new BEDA_BtnAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
         bundle.putString(AuthDialogFragment.AUTH_INFO, info);
+        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, bedaType);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "beda_vb");
@@ -370,11 +412,10 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
                         return true;
                     case R.id.mnu_get_report:
-                        ReportDialogFragment rdf = new ReportDialogFragment();
-                        rdf.show(getSupportFragmentManager(), "report");
+                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_REQ_CONNINFO));
                         break;
                     case R.id.mnu_test:
-                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIR));
+
                         break;
                     case R.id.mnu_wifi_settings:
                         startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
@@ -396,7 +437,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
                 final EditText et_msg = (EditText) dialogView.findViewById(R.id.et_msg);
 
-                dialogBuilder.setTitle("Send encrypted message");
+                dialogBuilder.setTitle("Send secure message");
                 dialogBuilder.setMessage("Enter text below");
                 dialogBuilder.setPositiveButton("Send", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
@@ -634,7 +675,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         NdefMessage msg = (NdefMessage) rawMsgs[0];
         // record 0 contains the MIME type, record 1 is the AAR, if present
         String data = new String(msg.getRecords()[0].getPayload());
-        oobResult(data);
+        oobResult(OOBData.NFC, data);
         Toast.makeText(UsdpMainActivity.this, "NFC message received! " + data, Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
     }
@@ -707,7 +748,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
             if (resultCode == RESULT_OK) {
                 String contents = data.getStringExtra("SCAN_RESULT");
-                oobResult(contents);
+                oobResult(OOBData.SiB, contents);
                 Toast.makeText(UsdpMainActivity.this, contents, Toast.LENGTH_SHORT).show();
             }
             if (resultCode == RESULT_CANCELED) {
@@ -730,6 +771,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
                     tts.setLanguage(Locale.US);
+                    tts.setSpeechRate(0.8f);
                 }
             }
         });
@@ -749,7 +791,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 showAuthVicIDialogFragment(bm);
                 break;
             case OOBData.VIC_N:
-                showAuthVicPDialogFragment(authdataStr);
+                showAuthVicNDialogFragment(authdataStr);
                 break;
             case OOBData.VIC_P:
                 showAuthVicPDialogFragment(smplMadlib.getSentence(authdata));
@@ -773,7 +815,6 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.SiBBlink:
                 if (oobData.isSendingDevice()) {
                     boolean[] pattern = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
-                    /*boolean[] pattern = {true, false, false, false, true};*/
                     showAuthBlSibDialogFragment(pattern);
                 } else {
                     showAuthCamDialogFragment("ajsnd");
@@ -782,18 +823,22 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.LaCDS:
                 String sentenceDS = smplMadlib.getSentence(authdata);
                 if (oobData.isSendingDevice()) {
-                    showAuthLacdsDialogFragment(sentenceDS);
+                    showAuthLacdsDialogFragment("LaC DS", "compare spoken and displayed sentence", sentenceDS);
                 } else {
+                    showAuthVerifDialogFragment("LaC DS", "compare spoken and displayed sentence", OOBData.LaCDS);
                     talk(sentenceDS);
+
                 }
                 break;
             case OOBData.LaCSS:
                 String sentenceSS = smplMadlib.getSentence(authdata);
                 if (oobData.isSendingDevice()) {
                     //speaker
+                    showAuthVerifDialogFragment("LaC SS", "compare both spoken sentences", OOBData.LaCSS);
                     talk(sentenceSS);
                 } else {
                     //speaker
+                    showAuthVerifDialogFragment("LaC SS", "compare both spoken sentences", OOBData.LaCSS);
                     talk(sentenceSS);
                 }
                 break;
@@ -802,14 +847,14 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     //vibrate
                     showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Vibrate Button", "press button when triggered by vibration");
+                    showBEDARecBtnDialogFragment("BEDA Vibrate Button", "press button when triggered by vibration", OOBData.BEDA_VB);
                 }
                 break;
             case OOBData.BEDA_LB:
                 if (oobData.isSendingDevice()) {
                     showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA LED Button", "press button as long as triggered by LED");
+                    showBEDARecBtnDialogFragment("BEDA LED Button", "press button as long as triggered by LED", OOBData.BEDA_LB);
                 }
                 break;
             case OOBData.BEDA_BPBT:
@@ -818,16 +863,16 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     boolean[] data = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
                     playSequence(data);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Beep Button", "press button as long as triggered by beeping");
+                    showBEDARecBtnDialogFragment("BEDA Beep Button", "press button as long as triggered by beeping", OOBData.BEDA_BPBT);
                 }
                 break;
             case OOBData.BEDA_BTBT:
                 // TODO not using SAS protocol
                 if (oobData.isSendingDevice()) {
                     //button
-                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices");
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices");
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT);
                 }
                 break;
             case OOBData.HAPADEP:
@@ -860,8 +905,10 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                                     "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", authdataStr.getBytes())
                             });
                     mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
+                    showAuthVerifDialogFragment("NFC", "hold devices together", OOBData.NFC);
                 } else {
                     //nfc receive
+
                 }
                 break;
             case OOBData.SWBU:
@@ -886,15 +933,17 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
     @Override
-    public void oobResult(boolean result) {
-        if (result) {
-            sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH));
-        }
+    public void oobResult(String mech, boolean result) {
+
+        AuthResult res = new AuthResult(mech, result);
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH, res));
+
     }
 
     @Override
-    public void oobResult(String data) {
-        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH_WDATA, data));
+    public void oobResult(String mech, String data) {
+        AuthResult res = new AuthResult(mech, data);
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH_WDATA, res));
     }
 
     // TODO move to its own file?
@@ -953,6 +1002,26 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     break;
                 case UsdpService.MSG_CHATMSGRECEIVED:
                     Toast.makeText(UsdpMainActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                    break;
+                case UsdpService.MSG_CONNINFO:
+                    ConnInfo info = (ConnInfo) msg.obj;
+                    //ReportDialogFragment rdf = new ReportDialogFragment();
+                    //rdf.show(getSupportFragmentManager(), info.toString());
+                    if (info == null) {
+                        Toast.makeText(UsdpMainActivity.this, "no secure connection established", Toast.LENGTH_SHORT).show();
+                    } else {
+                        AlertDialog alertDialog = new AlertDialog.Builder(UsdpMainActivity.this).create();
+                        alertDialog.setTitle("Connection info");
+                        alertDialog.setMessage(info.toString());
+                        
+                        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        alertDialog.show();
+                    }
                     break;
                 case UsdpService.AUTH_BARCODE:
                     Bitmap mBitmap = (Bitmap) msg.obj;

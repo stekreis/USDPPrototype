@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.CameraSurfaceView;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
@@ -108,12 +109,14 @@ public class CamAuthDialogFragment extends AuthDialogFragment {
             public void onClick(DialogInterface dialog, int id) {
                 if (mPreview != null) {
                     UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                    activity.oobResult(mPreview.getCaptSeq());
+                    activity.oobResult(OOBData.SiBBlink, mPreview.getCaptSeq());
                 }
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(OOBData.SiBBlink, false);
                 CamAuthDialogFragment.this.getDialog().cancel();
             }
         });

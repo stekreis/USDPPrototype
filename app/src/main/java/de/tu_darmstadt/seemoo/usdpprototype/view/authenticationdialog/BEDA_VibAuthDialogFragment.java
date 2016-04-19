@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 11.04.16.
@@ -48,21 +50,29 @@ public class BEDA_VibAuthDialogFragment extends AuthDialogFragment {
 
         View view = layoutInflater.inflate(R.layout.dialog_auth_infoonly, null);
 
-        /*TextView tv_title = (TextView) view.findViewById(R.id.tv_authdialog_title);
-        tv_title.setText(title);*/
-        TextView tv_info = (TextView) view.findViewById(R.id.tv_authdialog_explinfo);
+        TextView tv_title = (TextView) view.findViewById(R.id.tv_authinfo_title);
+        tv_title.setText(title);
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authinfo_info);
         tv_info.setText(info);
+
+        TextView tv = (TextView) view.findViewById(R.id.tv_authinfo_explinfo);
+        String text = bundle.getString(AUTH_EXPLINFO);
+        tv.setText(text);
+
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 vib.cancel();
-                //TODO do something
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(OOBData.BEDA_VB, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 vib.cancel();
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(OOBData.BEDA_VB, false);
                 BEDA_VibAuthDialogFragment.this.getDialog().cancel();
             }
         });

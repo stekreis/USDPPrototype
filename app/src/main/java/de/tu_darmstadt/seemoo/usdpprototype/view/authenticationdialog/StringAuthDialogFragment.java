@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
+import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -19,9 +20,9 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
  */
 public class StringAuthDialogFragment extends AuthDialogFragment {
 
+    public static final String AUTH_VICP = "AUTH_VICP";
     private static final String LOGTAG = "VicPDialogFrag";
 
-    public static final String AUTH_VICP = "AUTH_VICP";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,19 +44,27 @@ public class StringAuthDialogFragment extends AuthDialogFragment {
 
         View view = layoutInflater.inflate(R.layout.dialog_auth_phrase, null);
 
-        TextView tv = (TextView) view.findViewById(R.id.tv_vicp);
+        TextView tv_title = (TextView) view.findViewById(R.id.tv_authphrase_title);
+        tv_title.setText(title);
+        TextView tv_info = (TextView) view.findViewById(R.id.tv_authphrase_info);
+        tv_info.setText(info);
+
+        TextView tv = (TextView) view.findViewById(R.id.tv_authphrase_text);
         String text = bundle.getString(AUTH_VICP);
         tv.setText(text);
+        mechType = bundle.getString(AUTH_MECHTYPE);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(true);
+                activity.oobResult(mechType, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobResult(mechType, false);
                 StringAuthDialogFragment.this.getDialog().cancel();
             }
         });
