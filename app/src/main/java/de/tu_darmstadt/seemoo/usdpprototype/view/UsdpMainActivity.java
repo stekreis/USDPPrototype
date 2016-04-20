@@ -599,6 +599,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         }
     }
 
+
+    //TODO move and control from dialog
     private void playSequence(final boolean[] data) {
         Thread thread = new Thread() {
             @Override
@@ -980,7 +982,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
                     final AuthMechanism[] types = (AuthMechanism[]) msg.obj;
 
-                    AuthMechArrayAdapter  adap = new AuthMechArrayAdapter(UsdpMainActivity.this, R.layout.mech_list_item, types);
+                    AuthMechArrayAdapter adap = new AuthMechArrayAdapter(UsdpMainActivity.this, R.layout.mech_list_item, types);
 
 
                     LayoutInflater inflater = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE));
@@ -995,17 +997,16 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                         }
                     });
                     builder.setAdapter(adap,
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog,
-                                            int item) {
-
-                            Message msg = Message.obtain(null,
-                                    UsdpService.MSG_CHOSEN_AUTHMECH, types[item].getShortName());
-                            sendMsgtoService(msg);
-                            dialog.dismiss();
-                        }
-                    });
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                                    int item) {
+                                    Message msg = Message.obtain(null,
+                                            UsdpService.MSG_CHOSEN_AUTHMECH, types[item].getShortName());
+                                    sendMsgtoService(msg);
+                                    dialog.dismiss();
+                                }
+                            });
                     builder.show();
 
                     break;
@@ -1014,9 +1015,6 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     manageAuthenticationDialog((OOBData) msg.obj);
 
                     break;
-                case UsdpService.MSG_CHATMSGRECEIVED:
-                    Toast.makeText(UsdpMainActivity.this, (String) msg.obj, Toast.LENGTH_SHORT).show();
-                    break;
                 case UsdpService.MSG_CONNINFO:
                     ConnInfo info = (ConnInfo) msg.obj;
                     //ReportDialogFragment rdf = new ReportDialogFragment();
@@ -1024,22 +1022,18 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     if (info == null) {
                         Toast.makeText(UsdpMainActivity.this, "no secure connection established", Toast.LENGTH_SHORT).show();
                     } else {
-                        AlertDialog alertDialog = new AlertDialog.Builder(UsdpMainActivity.this).create();
-                        alertDialog.setTitle("Connection info");
-                        alertDialog.setMessage(info.toString());
+                        AlertDialog connInfoDialog = new AlertDialog.Builder(UsdpMainActivity.this).create();
+                        connInfoDialog.setTitle("Connection info");
+                        connInfoDialog.setMessage(info.toString());
 
-                        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                        connInfoDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int which) {
                                         dialog.dismiss();
                                     }
                                 });
-                        alertDialog.show();
+                        connInfoDialog.show();
                     }
-                    break;
-                case UsdpService.AUTH_BARCODE:
-                    Bitmap mBitmap = (Bitmap) msg.obj;
-                    showAuthBarcodeDialogFragment(mBitmap);
                     break;
                 default:
                     super.handleMessage(msg);
