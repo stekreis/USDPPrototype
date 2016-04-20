@@ -978,14 +978,22 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     break;
                 case UsdpService.MSG_AUTHMECHS:
 
-                    final AuthMechanism[] types2 = (AuthMechanism[]) msg.obj;
+                    final AuthMechanism[] types = (AuthMechanism[]) msg.obj;
 
-                    AuthMechArrayAdapter  adap = new AuthMechArrayAdapter(UsdpMainActivity.this, R.layout.mech_list_item, types2);
+                    AuthMechArrayAdapter  adap = new AuthMechArrayAdapter(UsdpMainActivity.this, R.layout.mech_list_item, types);
+
 
                     LayoutInflater inflater = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE));
-                    View customView = inflater.inflate(R.layout.dialog_mechlist, null, false);
+                    //View customView = inflater.inflate(R.layout.dialog_mechlist, null);
                     AlertDialog.Builder builder = new AlertDialog.Builder(UsdpMainActivity.this);
                     builder.setTitle("Choose authentication mechanism");
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int id) {
+                            // TODO maybe tell service pairing was aborted
+                            dialog.dismiss();
+                        }
+                    });
                     builder.setAdapter(adap,
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -993,34 +1001,13 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                                             int item) {
 
                             Message msg = Message.obtain(null,
-                                    UsdpService.MSG_CHOSEN_AUTHMECH, types2[item].getShortName());
+                                    UsdpService.MSG_CHOSEN_AUTHMECH, types[item].getShortName());
                             sendMsgtoService(msg);
                             dialog.dismiss();
                         }
                     });
-
-                    builder.setView(customView);
                     builder.show();
 
-                    /*
-                    AlertDialog.Builder authMechDialog = new AlertDialog.Builder(UsdpMainActivity.this);
-                    authMechDialog.setTitle("Choose authentication mechanism");
-                    final String[] types = (String[]) msg.obj;
-                    authMechDialog.setItems(types, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            dialog.dismiss();
-                            Log.d(LOGTAG, types[which] + " was chosen");
-                            Toast.makeText(UsdpMainActivity.this, types[which] + " was chosen", Toast.LENGTH_SHORT).show();
-
-                            Message msg = Message.obtain(null,
-                                    UsdpService.MSG_CHOSEN_AUTHMECH, types[which]);
-                            sendMsgtoService(msg);
-                        }
-
-                    });
-                    authMechDialog.show();*/
                     break;
                 case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
                     Toast.makeText(UsdpMainActivity.this, "auth shows now", Toast.LENGTH_SHORT).show();
