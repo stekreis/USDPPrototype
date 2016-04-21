@@ -26,6 +26,7 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -91,10 +92,13 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     public static final int MSG_SEND_ENCRYPTED = 27;
     public static final int MSG_REQ_CONNINFO = 28;
     public static final int MSG_CONNINFO = 29;
+
+    public static final int MSG_TEST = 30;
+
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final String LOGTAG = "UsdpService";
+    int x = 0;
     private SecureAuthentication secureAuthentication = null;
-
     //WifiP2p fields
     private WiFiDirectBroadcastReceiver mReceiver;
     private HashMap<String, MyWifiP2pDevice> discoveredDevicesNEW = new HashMap<>();
@@ -106,6 +110,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
     private MessageManager messageManager;
     private AuthMechManager authMechManager;
     private DeviceCapabilities deviceCapabilities;
+    private ArrayList<MessageManager> messageManagers = new ArrayList<>();
+
+    private HashMap<InetAddress, MessageManager> tempDevices = new HashMap<>();
 
     private WifiP2pDevice thisDevice;
 
@@ -115,6 +122,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     // if group owner, keep list of all devices. This involves connection information
     // android unique id
+    // conn info (failed connections, timestamps, pairing duration
+    // mac, ip
+
 
     /**
      * When binding to the service, we return an interface to our messenger
@@ -254,8 +264,16 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         switch (msg.what) {
             case MessageManager.MC_INITHANDLER:
                 Object obj = msg.obj;
+                MessageManager messman = (MessageManager) obj;
                 Log.d(LOGTAG, "initiating MessageManager");
-                setMessageManager((MessageManager) obj);
+                InetAddress ipAddress = messman.getSocket().getInetAddress();
+
+                tempDevices.put(ipAddress, messman);
+
+                Toast.makeText(getApplicationContext(), "address: " + ipAddress.getHostAddress(), Toast.LENGTH_LONG).show();
+
+                messageManagers.add(messman);
+                setMessageManager(messman);
                 break;
             case MessageManager.MC_MSGRECEIVED:
                 byte[] readBuf = (byte[]) msg.obj;
@@ -277,6 +295,9 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                             //handle error - could be due to incorrect password or tampered encryptedMsg
                         }
                         Toast.makeText(getApplicationContext(), "encrypted message:\n" + encryptedMsg + "\ndecrypted message:\n" + messageAfterDecrypt, Toast.LENGTH_LONG).show();
+                        break;
+                    case MessageManager.MSGTYPE_TEST:
+                        Toast.makeText(getApplicationContext(), "fuck flowers and fuck your happiness", Toast.LENGTH_LONG).show();
                         break;
                     case MessageManager.MSGTYPE_HELLO:
                         if (messageManager != null) {
@@ -623,7 +644,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                     break;
                 case MSG_SEND_ENCRYPTED:
-                    if (messageManager != null) {
+                   /* if (messageManager != null) {
                         String text = (String) msg.obj;
                         String key = String.valueOf(secureAuthentication.getGeneratedKeyVal());
 
@@ -643,7 +664,23 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         target.put((byte) encrData.length);
                         target.put(encrData);
                         messageManager.write(target.array());
+
+
+                    }*/
+
+                    if (!messageManagers.isEmpty()) {
+                        MessageManager man = messageManagers.get(x++ % messageManagers.size());
+
+                        Toast.makeText(getApplicationContext(), messageManagers.size() + " mesmans", Toast.LENGTH_LONG).show();
+
+                        byte[] data2 = "teststring".getBytes();
+
+                        ByteBuffer target2 = ByteBuffer.allocate(data2.length + 1);
+                        target2.put(MessageManager.MSGTYPE_TEST);
+                        target2.put(data2);
+                        man.write(target2.array());
                     }
+
                     break;
                 default:
                     super.handleMessage(msg);

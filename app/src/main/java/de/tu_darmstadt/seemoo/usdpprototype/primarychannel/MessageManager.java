@@ -23,9 +23,14 @@ public class MessageManager implements Runnable {
     public static final byte MSGTYPE_HELLOBACK = 5;
     public static final byte MSGTYPE_AUTH_DIALOG = 6;
     public static final byte MSGTYPE_ENCR = 7;
+    public static final byte MSGTYPE_TEST = 8;
 
     private Socket socket = null;
     private Handler handler;
+
+    public Socket getSocket(){
+        return socket;
+    }
 
     public MessageManager(Socket socket, Handler handler) {
         this.socket = socket;
