@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.AssetManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -42,6 +44,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.UsdpCipher;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.IpMacPacket;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
@@ -114,6 +117,8 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     private HashMap<InetAddress, MessageManager> tempDevices = new HashMap<>();
 
+    private InetAddress goAddress;
+
     private WifiP2pDevice thisDevice;
 
     private UsdpPacket remoteDevice;
@@ -151,6 +156,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     @Override
     public boolean stopService(Intent name) {
+
         return super.stopService(name);
     }
 
@@ -196,11 +202,10 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
 
     public void peersAvailable(WifiP2pDeviceList peers) {
-        WifiP2pDevice device;
+
         Log.d(LOGTAG, "list incoming");
         ArrayList<ListDevice> listdevices = new ArrayList<>();
-        for (WifiP2pDevice peer : peers.getDeviceList()) {
-            device = peer;
+        for (WifiP2pDevice device : peers.getDeviceList()) {
             String deviceaddr = device.deviceAddress;
             discoveredDevices.put(deviceaddr, device);
             listdevices.add(new ListDevice(deviceaddr, device.deviceName, device.status, device.isGroupOwner()));
@@ -236,8 +241,11 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
          * ServerSocketHandler}
          */
 
+        Toast.makeText(getApplicationContext(), "goaddress: " + p2pInfo.groupOwnerAddress, Toast.LENGTH_LONG).show();
+
         if (p2pInfo.isGroupOwner) {
             Log.d(LOGTAG, "Connected as group owner");
+            //goAddress = p2pInfo.groupOwnerAddress;
             try {
                 handler = new ServerSocketHandler(
                         ((UsdpMainActivity.MessageTarget) this).getHandler());
@@ -248,12 +256,32 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 return;
             }
         } else {
+            Toast.makeText(getApplicationContext(), "imapeer", Toast.LENGTH_LONG).show();
             Log.d(LOGTAG, "Connected as peer");
             handler = new ClientSocketHandler(
                     ((UsdpMainActivity.MessageTarget) this).getHandler(),
                     p2pInfo.groupOwnerAddress);
             handler.start();
         }
+    }
+
+
+    private void requestMacFromClients() {
+        if (!tempDevices.isEmpty()) {
+            for (MessageManager curr : tempDevices.values()) {
+
+                ByteBuffer target = ByteBuffer.allocate(1);
+                target.put(MessageManager.MSGTYPE_REQMAC);
+                messageManager.write(target.array());
+            }
+        }
+    }
+
+    private byte[] getContent(Object obj) {
+        byte[] recData = (byte[]) obj;
+        byte[] data = new byte[recData.length - 1];
+        System.arraycopy(recData, 1, data, 0, recData.length - 1);
+        return data;
     }
 
     /*
@@ -266,20 +294,58 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                 Object obj = msg.obj;
                 MessageManager messman = (MessageManager) obj;
                 Log.d(LOGTAG, "initiating MessageManager");
-                InetAddress ipAddress = messman.getSocket().getInetAddress();
+                InetAddress ipAddress1 = messman.getSocket().getInetAddress();
 
-                tempDevices.put(ipAddress, messman);
+                tempDevices.put(ipAddress1, messman);
 
-                Toast.makeText(getApplicationContext(), "address: " + ipAddress.getHostAddress(), Toast.LENGTH_LONG).show();
+                /*WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+                WifiInfo info = manager.getConnectionInfo();
+                String address = info.getMacAddress();*/
+                String address = Helper.getWFDMacAddress();
+                IpMacPacket ipMacPacket = new IpMacPacket(messman.getSocket().getLocalAddress(), address);
+                Toast.makeText(getApplicationContext(), "MACaddress: " + address , Toast.LENGTH_LONG).show();
+
+                byte[] ipMacSendPack = SerializationUtils.serialize(ipMacPacket);
+                ByteBuffer sendByteBuffer = ByteBuffer.allocate(ipMacSendPack.length + 1);
+                sendByteBuffer.put(MessageManager.MSGTYPE_SNDMAC);
+                sendByteBuffer.put(ipMacSendPack);
+
+
+                Toast.makeText(getApplicationContext(), "address: " + ipAddress1.getHostAddress() + " localaddress: " + messman.getSocket().getLocalAddress(), Toast.LENGTH_LONG).show();
 
                 messageManagers.add(messman);
                 setMessageManager(messman);
+
+                messman.write(sendByteBuffer.array());
+
                 break;
             case MessageManager.MC_MSGRECEIVED:
                 byte[] readBuf = (byte[]) msg.obj;
                 byte msg_type = readBuf[0];
                 Log.d(LOGTAG, msg_type + "");
                 switch (msg_type) {
+                    case MessageManager.MSGTYPE_SNDMAC:
+                        byte[] macData = getContent(msg.obj);
+                        IpMacPacket ipMacPacket1 = SerializationUtils.deserialize(macData);
+                        Toast.makeText(getApplicationContext(), "remotedevice\nipaddress: " + ipMacPacket1.getClientIp() + " macaddress: " + ipMacPacket1.getClientMacAddress(), Toast.LENGTH_LONG).show();
+
+                        String macAddress = ipMacPacket1.getClientMacAddress();
+                        InetAddress ipAddress = ipMacPacket1.getClientIp();
+
+                        MyWifiP2pDevice tempDev= new MyWifiP2pDevice(discoveredDevices.get(macAddress),null, tempDevices.get(ipAddress), ipAddress);
+
+                        discoveredDevicesNEW.put(macAddress, tempDev);
+
+
+                        break;
+                    /*case MessageManager.MSGTYPE_REQMAC:
+                        byte[] ipMacData = getContent(msg.obj);
+
+                        byte[] dataSend3 = address.getBytes();
+                        ByteBuffer target3 = ByteBuffer.allocate(dataSend3.length + 1);
+                        target3.put(MessageManager.MSGTYPE_SNDMAC);
+                        target3.put(dataSend3);
+                        break;*/
                     case MessageManager.MSGTYPE_ENCR:
                         byte[] recData2 = (byte[]) msg.obj;
                         byte[] data2 = new byte[recData2[1]];
@@ -301,9 +367,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         break;
                     case MessageManager.MSGTYPE_HELLO:
                         if (messageManager != null) {
-                            byte[] recData = (byte[]) msg.obj;
-                            byte[] data = new byte[recData.length - 1];
-                            System.arraycopy(recData, 1, data, 0, recData.length - 1);
+                            byte[] data = getContent(msg.obj);
                             UsdpPacket prettyData = (UsdpPacket) SerializationUtils.deserialize(data);
                             remoteDevice = prettyData;
                             if (secureAuthentication == null) {
@@ -323,9 +387,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         }
                         break;
                     case MessageManager.MSGTYPE_HELLOBACK:
-                        byte[] recData = (byte[]) msg.obj;
-                        byte[] data = new byte[recData.length - 1];
-                        System.arraycopy(recData, 1, data, 0, recData.length - 1);
+                        byte[] data = getContent(msg.obj);
                         UsdpPacket prettyData = (UsdpPacket) SerializationUtils.deserialize(data);
 
                         remoteDevice = prettyData;
@@ -355,9 +417,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         Log.d(LOGTAG, "chustcheckin " + prettyData.getMechsRec()[0]);
                         break;
                     case MessageManager.MSGTYPE_AUTH_DIALOG:
-                        byte[] recAuthData = (byte[]) msg.obj;
-                        byte[] actualData = new byte[recAuthData.length - 1];
-                        System.arraycopy(recAuthData, 1, actualData, 0, recAuthData.length - 1);
+                        byte[] actualData = getContent(msg.obj);
                         OOBData prettyData2 = (OOBData) SerializationUtils.deserialize(actualData);
                         secureAuthentication.generateKey(remoteDevice.getRemoteDevPublicKey());
                         prettyData2.setAuthdata(secureAuthentication.getHashedIntVal());
@@ -392,6 +452,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
     public void disconnect() {
         if (wifiP2pManager != null && mChannel != null) {
+
             wifiP2pManager.requestGroupInfo(mChannel, new WifiP2pManager.GroupInfoListener() {
                 @Override
                 public void onGroupInfoAvailable(WifiP2pGroup group) {

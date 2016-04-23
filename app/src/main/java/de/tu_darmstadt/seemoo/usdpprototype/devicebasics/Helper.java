@@ -11,9 +11,12 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import java.net.NetworkInterface;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by kenny on 11.04.16.
@@ -33,16 +36,74 @@ public class Helper {
     }
 
 
-    public static CharSequence getDate(long timeStamp){
+    public static CharSequence getDate(long timeStamp) {
 
-        try{
+        try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Date netDate = (new Date(timeStamp));
             return sdf.format(netDate);
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
             return "invalid date";
         }
+    }
+
+
+    //http://stackoverflow.com/a/29680825
+    public static String getWFDMacAddress(){
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface ntwInterface : interfaces) {
+
+                if (ntwInterface.getName().equalsIgnoreCase("p2p0")) {
+                    byte[] byteMac = ntwInterface.getHardwareAddress();
+                    if (byteMac==null){
+                        return null;
+                    }
+                    StringBuilder strBuilder = new StringBuilder();
+                    for (int i=0; i<byteMac.length; i++) {
+                        strBuilder.append(String.format("%02X:", byteMac[i]));
+                    }
+
+                    if (strBuilder.length()>0){
+                        strBuilder.deleteCharAt(strBuilder.length()-1);
+                    }
+
+                    return strBuilder.toString();
+                }
+
+            }
+        } catch (Exception e) {
+            Log.d(LOGTAG, e.getMessage());
+        }
+        return null;
+    }
+    // http://stackoverflow.com/a/32948723
+    public static String getWifiMacAddress() {
+        try {
+            String interfaceName = "wlan0";
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                if (!intf.getName().equalsIgnoreCase(interfaceName)) {
+                    continue;
+                }
+
+                byte[] mac = intf.getHardwareAddress();
+                if (mac == null) {
+                    return "";
+                }
+
+                StringBuilder buf = new StringBuilder();
+                for (byte aMac : mac) {
+                    buf.append(String.format("%02X:", aMac));
+                }
+                if (buf.length() > 0) {
+                    buf.deleteCharAt(buf.length() - 1);
+                }
+                return buf.toString();
+            }
+        } catch (Exception ex) {
+        } // for now eat exceptions
+        return "";
     }
 
     public static Bitmap generateQR(String input) {
@@ -134,7 +195,7 @@ public class Helper {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             int d = digits.indexOf(c);
-            val = 16*val + d;
+            val = 16 * val + d;
         }
         return val;
     }
