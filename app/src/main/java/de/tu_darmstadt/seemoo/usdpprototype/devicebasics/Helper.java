@@ -49,26 +49,26 @@ public class Helper {
 
 
     //http://stackoverflow.com/a/29680825
-    public static String getWFDMacAddress(){
+    public static String getWFDMacAddress() {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
             for (NetworkInterface ntwInterface : interfaces) {
 
                 if (ntwInterface.getName().equalsIgnoreCase("p2p0")) {
                     byte[] byteMac = ntwInterface.getHardwareAddress();
-                    if (byteMac==null){
+                    if (byteMac == null) {
                         return null;
                     }
                     StringBuilder strBuilder = new StringBuilder();
-                    for (int i=0; i<byteMac.length; i++) {
+                    for (int i = 0; i < byteMac.length; i++) {
                         strBuilder.append(String.format("%02X:", byteMac[i]));
                     }
 
-                    if (strBuilder.length()>0){
-                        strBuilder.deleteCharAt(strBuilder.length()-1);
+                    if (strBuilder.length() > 0) {
+                        strBuilder.deleteCharAt(strBuilder.length() - 1);
                     }
 
-                    return strBuilder.toString();
+                    return strBuilder.toString().toLowerCase();
                 }
 
             }
@@ -77,6 +77,7 @@ public class Helper {
         }
         return null;
     }
+
     // http://stackoverflow.com/a/32948723
     public static String getWifiMacAddress() {
         try {

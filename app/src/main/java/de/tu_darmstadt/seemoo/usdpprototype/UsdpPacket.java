@@ -6,6 +6,7 @@ import java.io.Serializable;
  * Created by kenny on 09.04.16.
  */
 public class UsdpPacket implements Serializable {
+    private static final long serialVersionUID = 8200060948728170659L;
 
     private String uniqueId;
     private String protVersion;

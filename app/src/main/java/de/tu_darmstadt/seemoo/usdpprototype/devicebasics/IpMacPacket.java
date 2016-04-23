@@ -7,6 +7,7 @@ import java.net.InetAddress;
  * Created by kenny on 22.04.16.
  */
 public class IpMacPacket implements Serializable {
+    private static final long serialVersionUID = 1049362891172852933L;
     private String clientMacAddress = null;
     private InetAddress clientIp = null;
 

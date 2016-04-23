@@ -21,16 +21,10 @@ public class OOBData implements Serializable {
     public static final String HAPADEP = "HAPADEP";
     public static final String NFC = "NFC";
     public static final String SWBU = "SWBU";
-
+    private static final long serialVersionUID = 584801670551829147L;
     private String type;
-
-    public void setAuthdata(int authdata) {
-        this.authdata = authdata;
-    }
-
     private int authdata;
     private boolean roleSend;
-
     public OOBData(String type, int authdata, boolean roleSend) {
         this.type = type;
         this.authdata = authdata;
@@ -47,5 +41,9 @@ public class OOBData implements Serializable {
 
     public int getAuthdata() {
         return authdata;
+    }
+
+    public void setAuthdata(int authdata) {
+        this.authdata = authdata;
     }
 }

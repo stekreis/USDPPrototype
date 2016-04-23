@@ -2,7 +2,6 @@ package de.tu_darmstadt.seemoo.usdpprototype.view;
 
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -57,10 +56,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthResult;
-import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecAuthVIC;
+import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.InnerMsg;
+import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.TargetMsg;
 import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
@@ -591,7 +590,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 dialogBuilder.setMessage("Enter text below");
                 dialogBuilder.setPositiveButton("Send", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_SEND_ENCRYPTED, new InnerMsg(selectedDeviceMac, et_msg.toString())));
+                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_SEND_ENCRYPTED, new TargetMsg(selectedDeviceMac, et_msg.getText().toString())));
                     }
                 });
                 dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -839,7 +838,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 break;
             case OOBData.SiBBlink:
                 if (oobData.isSendingDevice()) {
-                    boolean[] pattern = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
+                    boolean[] pattern = Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH);
                     showAuthBlSibDialogFragment(pattern);
                 } else {
                     showAuthCamDialogFragment("ajsnd");
@@ -870,14 +869,14 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.BEDA_VB:
                 if (oobData.isSendingDevice()) {
                     //vibrate
-                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
+                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH));
                 } else {
                     showBEDARecBtnDialogFragment("BEDA Vibrate Button", "press button when triggered by vibration", OOBData.BEDA_VB);
                 }
                 break;
             case OOBData.BEDA_LB:
                 if (oobData.isSendingDevice()) {
-                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH));
+                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH));
                 } else {
                     showBEDARecBtnDialogFragment("BEDA LED Button", "press button as long as triggered by LED", OOBData.BEDA_LB);
                 }
@@ -885,7 +884,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.BEDA_BPBT:
                 if (oobData.isSendingDevice()) {
                     //speaker
-                    boolean[] data = Helper.getBinaryArray(authdata, SecAuthVIC.OOB_BITLENGTH);
+                    boolean[] data = Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH);
                     playSequence(data);
                 } else {
                     showBEDARecBtnDialogFragment("BEDA Beep Button", "press button as long as triggered by beeping", OOBData.BEDA_BPBT);
@@ -1001,7 +1000,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     setStateInfo(dev);
                     break;
                 case UsdpService.MSG_AUTHMECHS:
-                    final InnerMsg iMsg = (InnerMsg) msg.obj;
+                    final TargetMsg iMsg = (TargetMsg) msg.obj;
                     final AuthMechanism[] types = (AuthMechanism[]) iMsg.getObj();
 
                     AuthMechArrayAdapter adap = new AuthMechArrayAdapter(UsdpMainActivity.this, R.layout.mech_list_item, types);
@@ -1021,7 +1020,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                                 public void onClick(DialogInterface dialog,
                                                     int item) {
                                     Message msg = Message.obtain(null,
-                                            UsdpService.MSG_CHOSEN_AUTHMECH, new InnerMsg(iMsg.getTargetAddress(), iMsg.getSenderAddress(), types[item].getShortName()));
+                                            UsdpService.MSG_CHOSEN_AUTHMECH, new TargetMsg(iMsg.getTargetAddress(), iMsg.getSenderAddress(), types[item].getShortName()));
                                     sendMsgtoService(msg);
                                     dialog.dismiss();
                                 }
@@ -1031,7 +1030,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     break;
                 case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
                     Toast.makeText(UsdpMainActivity.this, "auth shows now", Toast.LENGTH_SHORT).show();
-                    manageAuthenticationDialog((OOBData) ((InnerMsg) msg.obj).getObj()); // TODO also send sender/target address
+                    manageAuthenticationDialog((OOBData) ((TargetMsg) msg.obj).getObj()); // TODO also send sender/target address
 
                     break;
                 case UsdpService.MSG_CONNINFO:

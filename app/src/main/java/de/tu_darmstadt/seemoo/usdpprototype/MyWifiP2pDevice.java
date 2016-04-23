@@ -15,6 +15,7 @@ public class MyWifiP2pDevice {
     private UsdpPacket packet = null;
     private MessageManager messMan = null;
     private InetAddress inetAddress = null;
+    private int symKey = -1;
 
     public MyWifiP2pDevice(WifiP2pDevice device, UsdpPacket packet, MessageManager messMan, InetAddress inetAddress) {
         this.device = device;
@@ -23,8 +24,16 @@ public class MyWifiP2pDevice {
         this.inetAddress = inetAddress;
     }
 
-    public MyWifiP2pDevice(WifiP2pDevice device){
+    public MyWifiP2pDevice(WifiP2pDevice device) {
         this.device = device;
+    }
+
+    public int getSymKey() {
+        return symKey;
+    }
+
+    public void setSymKey(int symKey) {
+        this.symKey = symKey;
     }
 
     public InetAddress getInetAddress() {

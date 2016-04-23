@@ -23,18 +23,16 @@ import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 /**
  * Created by kenny on 08.02.16.
  */
-public class SecAuthVIC {
+public class SecureAuthentication {
 
     public final static int pValue = 913247;
     public final static int gValue = 370934;
     public static final int OOB_BITLENGTH = 20;
-    private static final String LOGTAG = "SecAuthVIC";
+    private static final String LOGTAG = "SecAuth";
     private static final int BITLENGTHMAX = 512;
     private static int bitlength = 256;
     private BigInteger priv;
     private BigInteger pub;
-
-    private int generatedKey = 0;
 
     public static String toMD5(byte[] convertible) {
         return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
@@ -42,6 +40,16 @@ public class SecAuthVIC {
 
     public static String toMD5(String convertible) {
         return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
+    }
+
+    public static String getHashedVal(int generatedKey) {
+        return toMD5(String.valueOf(generatedKey)).substring(0, 5);
+    }
+
+    public static int getHashedIntVal(int generatedKey) {
+        int hashedkey = Helper.hex2decimal(getHashedVal(generatedKey));
+        Log.d(LOGTAG, "genHkey:" + hashedkey);
+        return hashedkey;
     }
 
     public void init() {
@@ -58,39 +66,13 @@ public class SecAuthVIC {
         Log.d(LOGTAG, "pub: " + pub.toString());
     }
 
-    private void genPAndG() throws InvalidParameterSpecException, NoSuchAlgorithmException {
-        AlgorithmParameterGenerator paramGen = AlgorithmParameterGenerator.getInstance("DH");
-        paramGen.init(bitlength);
-
-        AlgorithmParameters params = paramGen.generateParameters();
-        DHParameterSpec dhSpec = (DHParameterSpec) params.getParameterSpec(DHParameterSpec.class);
-
-        Log.d(LOGTAG, "testingtesting" + dhSpec.getP() + "," + dhSpec.getG() + "," + dhSpec.getL());
-    }
-
     public int generateKey(int othrPublicVal) {
         BigInteger pVal = BigInteger.valueOf(pValue);
         BigInteger otherPublicVal = BigInteger.valueOf(othrPublicVal);
-        return generatedKey = otherPublicVal.modPow(priv, pVal).intValue();
-    }
-
-
-    public int getGeneratedKeyVal() {
-        return generatedKey;
+        return otherPublicVal.modPow(priv, pVal).intValue();
     }
 
     public int getPublicDeviceKey() {
         return pub.intValue();
-    }
-
-    public String getHashedVal() {
-        return toMD5(String.valueOf(generatedKey)).substring(0, 5);
-    }
-
-    public int getHashedIntVal() {
-        Log.d(LOGTAG, "genPkey:" + generatedKey);
-        int hashedkey = Helper.hex2decimal(getHashedVal());
-        Log.d(LOGTAG, "genHkey:" + hashedkey);
-        return hashedkey;
     }
 }

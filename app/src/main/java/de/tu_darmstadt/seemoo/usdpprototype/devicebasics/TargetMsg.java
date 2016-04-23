@@ -5,16 +5,17 @@ import java.io.Serializable;
 /**
  * Created by kenny on 23.04.16.
  */
-public class InnerMsg implements Serializable{
+public class TargetMsg implements Serializable{
+    private static final long serialVersionUID = 601696025421177797L;
     private String targetAddress = null;
     private String senderAddress = null;
     private Object obj = null;
 
-    public InnerMsg(String targetAddress, Object obj) {
+    public TargetMsg(String targetAddress, Object obj) {
         this.targetAddress = targetAddress;
         this.obj = obj;
     }
-    public InnerMsg(String senderAddress, String targetAddress, Object obj) {
+    public TargetMsg(String senderAddress, String targetAddress, Object obj) {
         this(targetAddress, obj);
         this.senderAddress = senderAddress;
     }
