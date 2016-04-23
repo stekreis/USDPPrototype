@@ -23,7 +23,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 /**
  * Created by kenny on 08.02.16.
  */
-public class SecAuthVIC extends SecureAuthentication {
+public class SecAuthVIC {
 
     public final static int pValue = 913247;
     public final static int gValue = 370934;
@@ -44,7 +44,6 @@ public class SecAuthVIC extends SecureAuthentication {
         return new String(Hex.encodeHex(DigestUtils.md5(convertible)));
     }
 
-    @Override
     public void init() {
         if (bitlength > BITLENGTHMAX) {
             bitlength = BITLENGTHMAX;
@@ -84,16 +83,14 @@ public class SecAuthVIC extends SecureAuthentication {
         return pub.intValue();
     }
 
-    @Override
     public String getHashedVal() {
         return toMD5(String.valueOf(generatedKey)).substring(0, 5);
     }
 
-    @Override
     public int getHashedIntVal() {
-        Log.d(LOGTAG, "genPkey:"+generatedKey);
-        int hashedkey =Helper.hex2decimal(getHashedVal());
-        Log.d(LOGTAG, "genHkey:"+hashedkey);
+        Log.d(LOGTAG, "genPkey:" + generatedKey);
+        int hashedkey = Helper.hex2decimal(getHashedVal());
+        Log.d(LOGTAG, "genHkey:" + hashedkey);
         return hashedkey;
     }
 }

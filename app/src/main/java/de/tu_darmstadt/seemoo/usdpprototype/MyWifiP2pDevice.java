@@ -11,16 +11,20 @@ import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
  * Created by kenny on 13.04.16.
  */
 public class MyWifiP2pDevice {
-    private WifiP2pDevice device;
-    private UsdpPacket packet;
-    private MessageManager messMan;
-    private InetAddress inetAddress;
+    private WifiP2pDevice device = null;
+    private UsdpPacket packet = null;
+    private MessageManager messMan = null;
+    private InetAddress inetAddress = null;
 
     public MyWifiP2pDevice(WifiP2pDevice device, UsdpPacket packet, MessageManager messMan, InetAddress inetAddress) {
         this.device = device;
         this.packet = packet;
         this.messMan = messMan;
         this.inetAddress = inetAddress;
+    }
+
+    public MyWifiP2pDevice(WifiP2pDevice device){
+        this.device = device;
     }
 
     public InetAddress getInetAddress() {
