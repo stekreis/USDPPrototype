@@ -53,18 +53,19 @@ public class StringAuthDialogFragment extends AuthDialogFragment {
         String text = bundle.getString(AUTH_VICP);
         tv.setText(text);
         mechType = bundle.getString(AUTH_MECHTYPE);
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, true);
+                activity.oobResult(tgtDevice, mechType, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, false);
+                activity.oobResult(tgtDevice, mechType, false);
                 StringAuthDialogFragment.this.getDialog().cancel();
             }
         });

@@ -10,22 +10,31 @@ import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
 /**
  * Created by kenny on 13.04.16.
  */
-public class MyWifiP2pDevice {
+public class RemoteDevice {
     private WifiP2pDevice device = null;
     private UsdpPacket packet = null;
     private MessageManager messMan = null;
     private InetAddress inetAddress = null;
     private int symKey = -1;
+    private ConnInfo connInfo = null;
 
-    public MyWifiP2pDevice(WifiP2pDevice device, UsdpPacket packet, MessageManager messMan, InetAddress inetAddress) {
+    public RemoteDevice(WifiP2pDevice device, UsdpPacket packet, MessageManager messMan, InetAddress inetAddress) {
         this.device = device;
         this.packet = packet;
         this.messMan = messMan;
         this.inetAddress = inetAddress;
     }
 
-    public MyWifiP2pDevice(WifiP2pDevice device) {
+    public RemoteDevice(WifiP2pDevice device) {
         this.device = device;
+    }
+
+    public ConnInfo getConnInfo() {
+        return connInfo;
+    }
+
+    public void setConnInfo(ConnInfo connInfo) {
+        this.connInfo = connInfo;
     }
 
     public int getSymKey() {

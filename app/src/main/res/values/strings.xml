@@ -10,4 +10,5 @@
     <string name="cancel_invite">Cancel invitation</string>
     <string name="send_message">Send message</string>
     <string name="wifi_settings">WiFi Settings</string>
+    <string name="pair">Pair</string>
 </resources>

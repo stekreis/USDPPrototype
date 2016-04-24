@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.devicebasics;
+package de.tu_darmstadt.seemoo.usdpprototype.misc;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -10,8 +10,10 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.scottyab.aescrypt.AESCrypt;
 
 import java.net.NetworkInterface;
+import java.security.GeneralSecurityException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +37,15 @@ public class Helper {
         }
     }
 
+    public static String encrypt(String text, String key) {
+        String encryptedMsg = "";
+        try {
+            encryptedMsg = AESCrypt.encrypt(key, text);
+        } catch (GeneralSecurityException e) {
+            //TODO handle error
+        }
+        return encryptedMsg;
+    }
 
     public static CharSequence getDate(long timeStamp) {
 

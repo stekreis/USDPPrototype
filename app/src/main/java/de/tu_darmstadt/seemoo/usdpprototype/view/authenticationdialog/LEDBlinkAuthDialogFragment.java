@@ -18,8 +18,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.view.CameraSurfaceView;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
@@ -68,18 +67,19 @@ public class LEDBlinkAuthDialogFragment extends AuthDialogFragment {
         iv_blsib.setBackgroundColor(Color.LTGRAY);
         pattern = Helper.getSendingPattern(bundle.getBooleanArray(AUTH_PATTERN));
         mechType = bundle.getString(AUTH_MECHTYPE);
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, true);
+                activity.oobResult(tgtDevice, mechType, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, false);
+                activity.oobResult(tgtDevice, mechType, false);
                 LEDBlinkAuthDialogFragment.this.getDialog().cancel();
             }
         });

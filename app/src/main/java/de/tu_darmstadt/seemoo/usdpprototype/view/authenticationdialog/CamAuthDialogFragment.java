@@ -85,7 +85,7 @@ public class CamAuthDialogFragment extends AuthDialogFragment {
         tv_title.setText(title);
         TextView tv_info = (TextView) view.findViewById(R.id.tv_authdialogcam_info);
         tv_info.setText(info);
-
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
 
         checkCameraHardware(getContext());
 
@@ -101,22 +101,19 @@ public class CamAuthDialogFragment extends AuthDialogFragment {
             Toast.makeText(getContext(), "camera failed", Toast.LENGTH_SHORT).show();
         }
 
-        int width = bundle.getInt(BARCODE_WIDTH);
-        int height = bundle.getInt(BARCODE_HEIGHT);
-
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 if (mPreview != null) {
                     UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                    activity.oobResult(OOBData.SiBBlink, mPreview.getCaptSeq());
+                    activity.oobResult(tgtDevice, OOBData.SiBBlink, mPreview.getCaptSeq());
                 }
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(OOBData.SiBBlink, false);
+                activity.oobResult(tgtDevice, OOBData.SiBBlink, false);
                 CamAuthDialogFragment.this.getDialog().cancel();
             }
         });

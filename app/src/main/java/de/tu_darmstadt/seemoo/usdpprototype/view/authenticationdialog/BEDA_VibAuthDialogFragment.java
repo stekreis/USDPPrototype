@@ -58,21 +58,21 @@ public class BEDA_VibAuthDialogFragment extends AuthDialogFragment {
         TextView tv = (TextView) view.findViewById(R.id.tv_authinfo_explinfo);
         String text = bundle.getString(AUTH_EXPLINFO);
         tv.setText(text);
-
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 vib.cancel();
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(OOBData.BEDA_VB, true);
+                activity.oobResult(tgtDevice, OOBData.BEDA_VB, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 vib.cancel();
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(OOBData.BEDA_VB, false);
+                activity.oobResult(tgtDevice, OOBData.BEDA_VB, false);
                 BEDA_VibAuthDialogFragment.this.getDialog().cancel();
             }
         });

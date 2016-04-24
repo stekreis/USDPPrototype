@@ -57,10 +57,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthResult;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.DeviceCapabilities;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.TargetMsg;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.DeviceCapabilities;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.TargetMsg;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
@@ -83,6 +83,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     private final static int CTXM_DISCONN = 2;
     private static final int CTXM_CNCLINV = 3;
     private static final int AUTH_OOB_RESULT = 1;
+    private static final int CTXM_PAIR = 4;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
     private final ArrayList<Character> dtmfCharacters = new ArrayList<>();
     private final AudioProcessor goertzelAudioProcessor = new Goertzel(44100, 256, DTMF.DTMF_FREQUENCIES, new Goertzel.FrequenciesDetectedHandler() {
@@ -167,7 +168,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             }
 
             // As part of the sample, tell the user what happened.
-            Toast.makeText(UsdpMainActivity.this, "remote service connected",
+            Toast.makeText(UsdpMainActivity.this, "Service connected",
                     Toast.LENGTH_SHORT).show();
 
         }
@@ -180,7 +181,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             mBound = false;
 
             // As part of the sample, tell the user what happened.
-            Toast.makeText(UsdpMainActivity.this, "remote service disconnected",
+            Toast.makeText(UsdpMainActivity.this, "Service disconnected",
                     Toast.LENGTH_SHORT).show();
         }
     };
@@ -206,73 +207,79 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         init();
     }
 
-    private void showAuthCamDialogFragment(String phrase) {
+    private void showAuthCamDialogFragment(String phrase, String tDevice) {
         authDialog = new CamAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SibBlink");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "use camera on other device to capture blinking sequence");
         bundle.putString(CamAuthDialogFragment.AUTH_PATTERN, phrase);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsibcam");
         }
     }
 
-    private void showAuthVicNDialogFragment(String number) {
+    private void showAuthVicNDialogFragment(String number, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(StringAuthDialogFragment.AUTH_VICP, number);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_N);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-N: compare numbers");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with number on other device");
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvicn");
         }
     }
 
-    private void showAuthVicPDialogFragment(String phrase) {
+    private void showAuthVicPDialogFragment(String phrase, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_P);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-P: compare phrases");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with phrase on other device");
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvicp");
         }
     }
 
-    private void showAuthVerifDialogFragment(String title, String info, String mechtype) {
+    private void showAuthVerifDialogFragment(String title, String info, String mechtype, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
         bundle.putString(AuthDialogFragment.AUTH_INFO, info);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, mechtype);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), title);
         }
     }
 
-    private void showAuthLacdsDialogFragment(String title, String info, String phrase) {
+    private void showAuthLacdsDialogFragment(String title, String info, String phrase, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
         bundle.putString(AuthDialogFragment.AUTH_INFO, info);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.LaCDS);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authLaC_DS");
         }
     }
 
-    private void showAuthInfoDialogFragment(String info) {
+    private void showAuthInfoDialogFragment(String info, String tDevice) {
         authDialog = new InfoAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(InfoAuthDialogFragment.AUTH_INFOONLY, info);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "tzefuginfo");
@@ -280,7 +287,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
 
-    private void showAuthVicIDialogFragment(Bitmap bmp) {
+    private void showAuthVicIDialogFragment(Bitmap bmp, String tDevice) {
 
         authDialog = new ImgAuthDialogFragment();
         Bundle bundle = new Bundle();
@@ -292,52 +299,56 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putInt(ImgAuthDialogFragment.IMG_HEIGHT, bmp.getHeight());
         bundle.putInt(ImgAuthDialogFragment.IMG_WIDTH, bmp.getWidth());
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_I);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvici");
         }
     }
 
-    private void showAuthBlSibDialogFragment(boolean[] pattern) {
+    private void showAuthBlSibDialogFragment(boolean[] pattern, String tDevice) {
         authDialog = new LEDBlinkAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SiBblink: blinking sequence");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "capture blinking sequence");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.SiBBlink);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
         }
     }
 
-    private void showAuthBedaVibDialogFragment(boolean[] pattern) {
+    private void showAuthBedaVibDialogFragment(boolean[] pattern, String tDevice) {
         authDialog = new BEDA_VibAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA Vibrate-Button");
         bundle.putString(AuthDialogFragment.AUTH_EXPLINFO, "press button on other device when vibrating");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "press OK when finished");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
         }
     }
 
-    private void showAuthBEDA_LB_DialogFragment(boolean[] pattern) {
+    private void showAuthBEDA_LB_DialogFragment(boolean[] pattern, String tDevice) {
         authDialog = new LEDBlinkAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA LED-Button");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device as long as LED is bright");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.BEDA_LB);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authblsib");
         }
     }
 
-    private void showAuthBarcodeDialogFragment(Bitmap bmp) {
+    private void showAuthBarcodeDialogFragment(Bitmap bmp, String tDevice) {
         authDialog = new BarSibAuthDialogFragment();
         Bundle bundle = new Bundle();
         int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
@@ -348,18 +359,20 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putInt(BarSibAuthDialogFragment.BARCODE_HEIGHT, bmp.getHeight());
         bundle.putInt(BarSibAuthDialogFragment.BARCODE_WIDTH, bmp.getWidth());
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.SiB);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authbarsib");
         }
     }
 
-    private void showBEDARecBtnDialogFragment(String title, String info, String bedaType) {
+    private void showBEDARecBtnDialogFragment(String title, String info, String bedaType, String tDevice) {
         authDialog = new BEDA_BtnAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
         bundle.putString(AuthDialogFragment.AUTH_INFO, info);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, bedaType);
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "beda_vb");
@@ -413,7 +426,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
                         return true;
                     case R.id.mnu_get_report:
-                        sendMsgtoService(Message.obtain(null, UsdpService.MSG_REQ_CONNINFO));
+                        showShortToast("TBD");
                         break;
                     case R.id.mnu_test:
 
@@ -548,6 +561,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             ListDevice selDevice = (ListDevice) lv.getItemAtPosition(acmi.position);
             menu.setHeaderTitle("Device actions (" + selDevice.getName() + ")");
             menu.add(Menu.NONE, CTXM_SENDMSG, CTXM_SENDMSG, R.string.send_message);
+            menu.add(Menu.NONE, CTXM_PAIR, CTXM_PAIR, R.string.pair);
             menu.add(Menu.NONE, CTXM_GETRPRT, CTXM_GETRPRT, R.string.get_report);
             if (selDevice.getState() == WifiP2pDevice.CONNECTED) {
                 menu.add(Menu.NONE, CTXM_DISCONN, CTXM_DISCONN, R.string.disconnect);
@@ -603,7 +617,11 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
 
                 return true;
+            case CTXM_PAIR:
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_PAIRSEC, selectedDeviceMac));
+                return true;
             case CTXM_GETRPRT:
+                sendMsgtoService(Message.obtain(null, UsdpService.MSG_REQ_CONNINFO, selectedDeviceMac));
                 showShortToast("getrep");
                 return true;
             case CTXM_DISCONN:
@@ -698,9 +716,12 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         // only one message sent during the beam
         NdefMessage msg = (NdefMessage) rawMsgs[0];
         // record 0 contains the MIME type, record 1 is the AAR, if present
-        String data = new String(msg.getRecords()[0].getPayload());
-        oobResult(OOBData.NFC, data);
-        Toast.makeText(UsdpMainActivity.this, "NFC message received! " + data, Toast.LENGTH_SHORT).show();
+        String rcvdStr = new String(msg.getRecords()[0].getPayload());
+        String[] parts = rcvdStr.split("/");
+        String addr = parts[0];
+        String data = parts[1];
+        oobResult(addr, OOBData.NFC, data);
+        Toast.makeText(UsdpMainActivity.this, "NFC message received! (" + addr + ") " + data, Toast.LENGTH_SHORT).show();
         Log.d(LOGTAG, new String(msg.getRecords()[0].getPayload()));
     }
 
@@ -771,8 +792,11 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         if (requestCode == 0) {
 
             if (resultCode == RESULT_OK) {
-                String contents = data.getStringExtra("SCAN_RESULT");
-                oobResult(OOBData.SiB, contents);
+                String rcvdStr = data.getStringExtra("SCAN_RESULT");
+                String[] parts = rcvdStr.split("/");
+                String addr = parts[0];
+                String contents = parts[1];
+                oobResult(addr, OOBData.SiB, contents);
                 Toast.makeText(UsdpMainActivity.this, contents, Toast.LENGTH_SHORT).show();
             }
             if (resultCode == RESULT_CANCELED) {
@@ -801,34 +825,33 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         });
     }
 
-    public void acceptOobAuthentication() {
-        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH));
-    }
-
-    private void manageAuthenticationDialog(OOBData oobData) {
+    private void manageAuthenticationDialog(TargetMsg tMsg) {
+        OOBData oobData = (OOBData) tMsg.getObj();
+        String tDevice = tMsg.getTargetAddress();
         int authdata = oobData.getAuthdata();
         String authdataStr = String.valueOf(authdata);
         switch (oobData.getType()) {
             case OOBData.VIC_I:
                 final Identicon identicon = new AsymmetricIdenticon(getApplicationContext());
                 Bitmap bm = identicon.getBitmap(authdataStr);
-                showAuthVicIDialogFragment(bm);
+                showAuthVicIDialogFragment(bm, tDevice);
                 break;
             case OOBData.VIC_N:
-                showAuthVicNDialogFragment(authdataStr);
+                showAuthVicNDialogFragment(authdataStr, tDevice);
                 break;
             case OOBData.VIC_P:
-                showAuthVicPDialogFragment(smplMadlib.getSentence(authdata));
+                showAuthVicPDialogFragment(smplMadlib.getSentence(authdata), tDevice);
                 break;
             case OOBData.SiB:
                 if (oobData.isSendingDevice()) {
-                    showAuthBarcodeDialogFragment(Helper.generateQR(authdataStr));
+                    showAuthBarcodeDialogFragment(Helper.generateQR(tMsg.getSenderAddress() + '/' + authdataStr), tDevice);
                 } else {
                     Toast.makeText(this, "checking if zxing is installed", Toast.LENGTH_SHORT).show();
                     if (Helper.isPackageInstalled("com.google.zxing.client.android", this)) {
                         Intent intent = new Intent("com.google.zxing.client.android.SCAN");
                         intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
                         startActivityForResult(intent, 0);
+                        // TODO tDevice address gets lost
                     } else {
                         // TODO goto market, install. check this at the start (kind of init app generally)
                         Toast.makeText(this, "install zxing Barcode Scanner", Toast.LENGTH_SHORT).show();
@@ -839,17 +862,17 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.SiBBlink:
                 if (oobData.isSendingDevice()) {
                     boolean[] pattern = Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH);
-                    showAuthBlSibDialogFragment(pattern);
+                    showAuthBlSibDialogFragment(pattern, tDevice);
                 } else {
-                    showAuthCamDialogFragment("ajsnd");
+                    showAuthCamDialogFragment("SiBBlink", tDevice);
                 }
                 break;
             case OOBData.LaCDS:
                 String sentenceDS = smplMadlib.getSentence(authdata);
                 if (oobData.isSendingDevice()) {
-                    showAuthLacdsDialogFragment("LaC DS", "compare spoken and displayed sentence", sentenceDS);
+                    showAuthLacdsDialogFragment("LaC DS", "compare spoken and displayed sentence", sentenceDS, tDevice);
                 } else {
-                    showAuthVerifDialogFragment("LaC DS", "compare spoken and displayed sentence", OOBData.LaCDS);
+                    showAuthVerifDialogFragment("LaC DS", "compare spoken and displayed sentence", OOBData.LaCDS, tDevice);
                     talk(sentenceDS);
 
                 }
@@ -858,27 +881,27 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 String sentenceSS = smplMadlib.getSentence(authdata);
                 if (oobData.isSendingDevice()) {
                     //speaker
-                    showAuthVerifDialogFragment("LaC SS", "compare both spoken sentences", OOBData.LaCSS);
+                    showAuthVerifDialogFragment("LaC SS", "compare both spoken sentences", OOBData.LaCSS, tDevice);
                     talk(sentenceSS);
                 } else {
                     //speaker
-                    showAuthVerifDialogFragment("LaC SS", "compare both spoken sentences", OOBData.LaCSS);
+                    showAuthVerifDialogFragment("LaC SS", "compare both spoken sentences", OOBData.LaCSS, tDevice);
                     talk(sentenceSS);
                 }
                 break;
             case OOBData.BEDA_VB:
                 if (oobData.isSendingDevice()) {
                     //vibrate
-                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH));
+                    showAuthBedaVibDialogFragment(Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH), tDevice);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Vibrate Button", "press button when triggered by vibration", OOBData.BEDA_VB);
+                    showBEDARecBtnDialogFragment("BEDA Vibrate Button", "press button when triggered by vibration", OOBData.BEDA_VB, tDevice);
                 }
                 break;
             case OOBData.BEDA_LB:
                 if (oobData.isSendingDevice()) {
-                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH));
+                    showAuthBEDA_LB_DialogFragment(Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH), tDevice);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA LED Button", "press button as long as triggered by LED", OOBData.BEDA_LB);
+                    showBEDARecBtnDialogFragment("BEDA LED Button", "press button as long as triggered by LED", OOBData.BEDA_LB, tDevice);
                 }
                 break;
             case OOBData.BEDA_BPBT:
@@ -887,21 +910,22 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     boolean[] data = Helper.getBinaryArray(authdata, SecureAuthentication.OOB_BITLENGTH);
                     playSequence(data);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Beep Button", "press button as long as triggered by beeping", OOBData.BEDA_BPBT);
+                    showBEDARecBtnDialogFragment("BEDA Beep Button", "press button as long as triggered by beeping", OOBData.BEDA_BPBT, tDevice);
                 }
                 break;
             case OOBData.BEDA_BTBT:
                 // TODO not using SAS protocol
                 if (oobData.isSendingDevice()) {
                     //button
-                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT);
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT, tDevice);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT);
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT, tDevice);
                 }
                 break;
             case OOBData.HAPADEP:
                 if (oobData.isSendingDevice()) {
                     //speaker
+                    // TODO complete (missing last step, human comparison)
                     playSequence(Helper.getDigitlistFromInt(authdata));
                 } else {
                     //mic + speaker
@@ -929,7 +953,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                                     "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", authdataStr.getBytes())
                             });
                     mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
-                    showAuthVerifDialogFragment("NFC", "hold devices together", OOBData.NFC);
+                    showAuthVerifDialogFragment("NFC", "hold devices together", tMsg.getSenderAddress() + '/' + OOBData.NFC, tDevice);
                 } else {
                     //nfc receive
 
@@ -938,10 +962,10 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.SWBU:
                 if (oobData.isSendingDevice()) {
                     //accel
-                    showAuthInfoDialogFragment("shakeshake");
+                    showAuthInfoDialogFragment("shakeshake", tDevice);
                 } else {
                     //accel
-                    showAuthInfoDialogFragment("shakeshake");
+                    showAuthInfoDialogFragment("shakeshake", tDevice);
                 }
                 break;
         }
@@ -957,17 +981,17 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
     @Override
-    public void oobResult(String mech, boolean result) {
+    public void oobResult(String tDevice, String mech, boolean result) {
 
         AuthResult res = new AuthResult(mech, result);
-        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH, res));
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH, new TargetMsg(tDevice, res)));
 
     }
 
     @Override
-    public void oobResult(String mech, String data) {
+    public void oobResult(String tDevice, String mech, String data) {
         AuthResult res = new AuthResult(mech, data);
-        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH_WDATA, res));
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH_WDATA, new TargetMsg(tDevice, res)));
     }
 
     // TODO move to its own file?
@@ -1030,7 +1054,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     break;
                 case UsdpService.MSG_AUTHENTICATION_DIALOG_DATA:
                     Toast.makeText(UsdpMainActivity.this, "auth shows now", Toast.LENGTH_SHORT).show();
-                    manageAuthenticationDialog((OOBData) ((TargetMsg) msg.obj).getObj()); // TODO also send sender/target address
+                    manageAuthenticationDialog((TargetMsg) msg.obj);
 
                     break;
                 case UsdpService.MSG_CONNINFO:

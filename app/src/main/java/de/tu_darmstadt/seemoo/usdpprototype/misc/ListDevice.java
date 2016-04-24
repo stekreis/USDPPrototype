@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.devicebasics;
+package de.tu_darmstadt.seemoo.usdpprototype.misc;
 
 import android.net.wifi.p2p.WifiP2pDevice;
 

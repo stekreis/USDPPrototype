@@ -7,7 +7,7 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.usdpprototype.TwoLineArrayAdapter;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.ListDevice;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.ListDevice;
 
 /**
  * Created by kenny on 03.02.16.

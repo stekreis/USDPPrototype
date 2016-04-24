@@ -13,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 
 /**
  * SurfaceView to show camera preview and

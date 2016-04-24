@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechManager;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthMechanism;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 
 /**
  * Created by kenny on 19.04.16.

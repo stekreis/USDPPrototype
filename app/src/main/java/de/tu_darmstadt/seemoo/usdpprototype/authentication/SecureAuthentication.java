@@ -7,18 +7,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AlgorithmParameterGenerator;
-import java.security.AlgorithmParameters;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidParameterSpecException;
 
-import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.DHPublicKeySpec;
-
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 
 /**
  * Created by kenny on 08.02.16.

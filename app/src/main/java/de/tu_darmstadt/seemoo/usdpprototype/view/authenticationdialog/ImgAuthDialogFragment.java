@@ -61,6 +61,7 @@ public class ImgAuthDialogFragment extends AuthDialogFragment {
         int width = bundle.getInt(IMG_WIDTH);
         int height = bundle.getInt(IMG_HEIGHT);
         mechType = bundle.getString(AUTH_MECHTYPE);
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
         image = Bitmap.createBitmap((int[]) getArguments().get(IMG_IMAGE), 0, width, width, height, Bitmap.Config.ARGB_8888);
         iv_image.setImageBitmap(image);
 
@@ -68,13 +69,13 @@ public class ImgAuthDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, true);
+                activity.oobResult(tgtDevice,mechType, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, false);
+                activity.oobResult(tgtDevice, mechType, false);
                 ImgAuthDialogFragment.this.getDialog().cancel();
             }
         });

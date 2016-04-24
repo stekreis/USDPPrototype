@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.devicebasics;
+package de.tu_darmstadt.seemoo.usdpprototype.misc;
 
 import java.io.Serializable;
 import java.net.InetAddress;

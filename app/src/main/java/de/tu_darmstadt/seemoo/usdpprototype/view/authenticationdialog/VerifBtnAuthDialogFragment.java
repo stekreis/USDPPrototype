@@ -53,20 +53,19 @@ public class VerifBtnAuthDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType,true);
+                activity.oobResult(tgtDevice, mechType, true);
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType,false);
+                activity.oobResult(tgtDevice, mechType, false);
                 VerifBtnAuthDialogFragment.this.getDialog().cancel();
             }
         });
         return builder.create();
     }
-
 
 
 }

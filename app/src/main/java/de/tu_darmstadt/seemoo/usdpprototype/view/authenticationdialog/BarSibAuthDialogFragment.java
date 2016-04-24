@@ -3,7 +3,6 @@ package de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -13,10 +12,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -61,6 +58,7 @@ public class BarSibAuthDialogFragment extends AuthDialogFragment {
         int width = bundle.getInt(BARCODE_WIDTH);
         int height = bundle.getInt(BARCODE_HEIGHT);
         mechType = bundle.getString(AUTH_MECHTYPE);
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
         barcode = Bitmap.createBitmap((int[]) getArguments().get(BARCODE_CODE), 0, width, width, height, Bitmap.Config.ARGB_8888);
         iv_barcode.setImageBitmap(barcode);
 
@@ -68,7 +66,7 @@ public class BarSibAuthDialogFragment extends AuthDialogFragment {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, true);
+                activity.oobResult(tgtDevice, mechType, true);
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override

@@ -16,8 +16,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.devicebasics.Helper;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -56,7 +55,7 @@ public class BEDA_BtnAuthDialogFragment extends AuthDialogFragment {
         TextView tv_info = (TextView) view.findViewById(R.id.tv_authbedabtn_info);
         tv_info.setText(info);
         mechType = bundle.getString(AUTH_MECHTYPE);
-
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
         Button userbtn = (Button) view.findViewById(R.id.btn_recauth);
 
         userbtn.setOnTouchListener(new ReceiverButtonListener());
@@ -70,14 +69,14 @@ public class BEDA_BtnAuthDialogFragment extends AuthDialogFragment {
             public void onClick(DialogInterface dialog, int id) {
                 //Intent result is received by Activity
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, val);
+                activity.oobResult(tgtDevice, mechType, val);
 
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 UsdpMainActivity activity = (UsdpMainActivity) getActivity();
-                activity.oobResult(mechType, false);
+                activity.oobResult(tgtDevice, mechType, false);
                 BEDA_BtnAuthDialogFragment.this.getDialog().cancel();
             }
         });
