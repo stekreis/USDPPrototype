@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.Swbu;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Swbu;
 
 /**
  * Created by kenny on 15.02.16.

@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**

@@ -46,11 +46,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.AudioProcessor;
-import be.tarsos.dsp.io.android.AudioDispatcherFactory;
-import be.tarsos.dsp.pitch.DTMF;
-import be.tarsos.dsp.pitch.Goertzel;
 import de.tu_darmstadt.seemoo.usdpprototype.ConnInfo;
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
@@ -59,11 +54,13 @@ import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthResult;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.Swbu;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.TargetMsg;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.ListDevice;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.SimpleMadlib;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.HapaRecAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.InfoAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_BtnAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_VibAuthDialogFragment;
@@ -85,42 +82,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     private static final int AUTH_OOB_RESULT = 1;
     private static final int CTXM_PAIR = 4;
     private final Messenger mMessenger = new Messenger(new InternalMsgIncomingHandler());
-    private final ArrayList<Character> dtmfCharacters = new ArrayList<>();
-    private final AudioProcessor goertzelAudioProcessor = new Goertzel(44100, 256, DTMF.DTMF_FREQUENCIES, new Goertzel.FrequenciesDetectedHandler() {
-        private int[] currCharacters = new int[10];
-        private boolean newVal = false;
 
-        @Override
-        public void handleDetectedFrequencies(final double[] frequencies, final double[] powers, final double[] allFrequencies, final double allPowers[]) {
-            if (frequencies.length == 2) {
-                int rowIndex = -1;
-                int colIndex = -1;
-                for (int i = 0; i < 4; i++) {
-                    if (frequencies[0] == DTMF.DTMF_FREQUENCIES[i] || frequencies[1] == DTMF.DTMF_FREQUENCIES[i])
-                        rowIndex = i;
-                }
-                for (int i = 4; i < DTMF.DTMF_FREQUENCIES.length; i++) {
-                    if (frequencies[0] == DTMF.DTMF_FREQUENCIES[i] || frequencies[1] == DTMF.DTMF_FREQUENCIES[i])
-                        colIndex = i - 4;
-                }
-                if (rowIndex >= 0 && colIndex >= 0) {
 
-                    char curChar = DTMF.DTMF_CHARACTERS[rowIndex][colIndex];
-                    if (curChar >= '0' && curChar <= '9') {
-                        currCharacters[curChar - '0']++;
-                        newVal = true;
-                    } else if (curChar == 'A' && newVal) {
-                        newVal = false;
-                        char res = Helper.findHighestValPos(currCharacters);
-                        if (res != '\uffff') {
-                            dtmfCharacters.add((char) (res + '0'));
-                            currCharacters = new int[currCharacters.length];
-                        }
-                    }
-                }
-            }
-        }
-    });
     private NfcAdapter mNfcAdapter;
     private DeviceCapabilities devCap = new DeviceCapabilities();
     //UI
@@ -187,8 +150,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     };
     private TextToSpeech tts;
 
-    // TODO move to own class? with other overall usable methods
 
+    // TODO move to own class? with other overall usable methods
 
     private void init() {
         smplMadlib = new SimpleMadlib();
@@ -223,8 +186,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     private void showAuthVicNDialogFragment(String number, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(StringAuthDialogFragment.AUTH_VICP, number);
-        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_N);
+        bundle.putString(AuthDialogFragment.AUTH_DATA, number);
+        bundle.putString(AuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_N);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-N: compare numbers");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with number on other device");
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
@@ -237,7 +200,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     private void showAuthVicPDialogFragment(String phrase, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
+        bundle.putString(AuthDialogFragment.AUTH_DATA, phrase);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_P);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-P: compare phrases");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with phrase on other device");
@@ -245,6 +208,20 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "authvicp");
+        }
+    }
+
+    private void showHapaRecAuthDialogFragment(String tDevice, String data) {
+        authDialog = new HapaRecAuthDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString(AuthDialogFragment.AUTH_MECHTYPE, OOBData.HAPADEP);
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "HAPADEP: audio verification");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "wait until sequence completed");
+        bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
+        bundle.putString(AuthDialogFragment.AUTH_DATA, data);
+        if (!authDialog.isFragmentUIActive()) {
+            authDialog.setArguments(bundle);
+            authDialog.show(getSupportFragmentManager(), "Hapadep");
         }
     }
 
@@ -264,7 +241,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     private void showAuthLacdsDialogFragment(String title, String info, String phrase, String tDevice) {
         authDialog = new StringAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(StringAuthDialogFragment.AUTH_VICP, phrase);
+        bundle.putString(AuthDialogFragment.AUTH_DATA, phrase);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
         bundle.putString(AuthDialogFragment.AUTH_INFO, info);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.LaCDS);
@@ -622,7 +599,6 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 return true;
             case CTXM_GETRPRT:
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_REQ_CONNINFO, selectedDeviceMac));
-                showShortToast("getrep");
                 return true;
             case CTXM_DISCONN:
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_DISCONNECT, selectedDeviceMac));
@@ -669,17 +645,21 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
 
     }
 
-    private void playSequence(final ArrayList<Integer> digits) {
+    private void playHapaSequence(final ArrayList<Integer> digits) {
         Thread thread = new Thread() {
             @Override
             public void run() {
-                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_DTMF, 50);
-                // delay for other device to get started
-                playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
-                for (Integer val : digits) {
-                    playSound(toneGen, val, 300);
-                    // use as seperator
-                    playSound(toneGen, ToneGenerator.TONE_DTMF_A, 100);
+                if (digits != null && !digits.isEmpty()) {
+                    ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_DTMF, 50);
+                    // delay for other device to get started
+                    playSound(toneGen, ToneGenerator.TONE_CDMA_SIGNAL_OFF, 1000);
+                    for (Integer val : digits) {
+                        playSound(toneGen, val, 300);
+                        // use as seperator
+                        playSound(toneGen, ToneGenerator.TONE_DTMF_A, 100);
+                    }
+                    playSound(toneGen, ToneGenerator.TONE_DTMF_B, 100);
+                    transformAndTalk(digits.get(digits.size() - 1));
                 }
             }
         };
@@ -807,7 +787,11 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
 
-    private void talk(String text) {
+    public void transformAndTalk(int num) {
+        talk(smplMadlib.getSentence(num));
+    }
+
+    public void talk(String text) {
         //TODO support old API (then remove  @TargetApi(Build.VERSION_CODES.LOLLIPOP))
         tts.speak(text, TextToSpeech.QUEUE_ADD, null);
     }
@@ -923,17 +907,13 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 }
                 break;
             case OOBData.HAPADEP:
+                String humVerifStr = String.valueOf(authdata % 10);
                 if (oobData.isSendingDevice()) {
                     //speaker
-                    // TODO complete (missing last step, human comparison)
-                    playSequence(Helper.getDigitlistFromInt(authdata));
+                    playHapaSequence(Helper.getDigitlistFromInt(authdata));
                 } else {
                     //mic + speaker
-                    AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(44100, 2048, 1024);
-                    dispatcher.addAudioProcessor(goertzelAudioProcessor);
-
-                    new Thread(dispatcher).start();
-                    Log.d(LOGTAG, "goertzel now started");
+                    showHapaRecAuthDialogFragment(tDevice, humVerifStr);
                 }
                 break;
             case OOBData.NFC:
@@ -950,10 +930,10 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                     String text = "Message from \"" + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + "\"";
                     NdefMessage msg = new NdefMessage(
                             new NdefRecord[]{NdefRecord.createMime(
-                                    "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", authdataStr.getBytes())
+                                    "application/vnd.de.tu_darmstadt.seemoo.usdpprototype", (tMsg.getSenderAddress() + '/' + authdataStr).getBytes())
                             });
                     mNfcAdapter.setNdefPushMessage(msg, UsdpMainActivity.this);
-                    showAuthVerifDialogFragment("NFC", "hold devices together", tMsg.getSenderAddress() + '/' + OOBData.NFC, tDevice);
+                    showAuthVerifDialogFragment("NFC", "hold devices together", OOBData.NFC, tDevice);
                 } else {
                     //nfc receive
 
@@ -962,14 +942,18 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.SWBU:
                 if (oobData.isSendingDevice()) {
                     //accel
+                    Swbu swbu = new Swbu(getApplication());
+
                     showAuthInfoDialogFragment("shakeshake", tDevice);
                 } else {
                     //accel
+                    Swbu swbu = new Swbu(getApplication());
                     showAuthInfoDialogFragment("shakeshake", tDevice);
                 }
                 break;
         }
     }
+
 
     @Override
     public void onDestroy() {

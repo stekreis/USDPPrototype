@@ -16,7 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.CameraSurfaceView;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 

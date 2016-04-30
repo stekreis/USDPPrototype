@@ -14,7 +14,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -22,7 +21,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
  */
 public class ImgAuthDialogFragment extends AuthDialogFragment {
 
-    public static final String AUTH_VICP = "AUTH_VICP";
+    public static final String AUTH_VICP = "AUTH_DATA";
     public static final String IMG_WIDTH = "IMG_WIDTH";
     public static final String IMG_HEIGHT = "IMG_HEIGHT";
     public static final String IMG_IMAGE = "IMG_IMAGE";

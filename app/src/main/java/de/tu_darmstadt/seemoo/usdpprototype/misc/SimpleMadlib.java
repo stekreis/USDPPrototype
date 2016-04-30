@@ -1,4 +1,4 @@
-package de.tu_darmstadt.seemoo.usdpprototype.secondarychannel;
+package de.tu_darmstadt.seemoo.usdpprototype.misc;
 
 import android.content.Context;
 import android.content.res.AssetManager;

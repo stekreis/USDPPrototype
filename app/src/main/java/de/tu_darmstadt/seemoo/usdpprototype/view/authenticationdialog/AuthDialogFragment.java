@@ -16,6 +16,7 @@ public class AuthDialogFragment extends DialogFragment {
     public static final String AUTH_EXPLINFO = "AUTH_EXPLINFO";
 
     public static final String AUTH_TARGET_DVC = "AUTHTRGT_DVC";
+    public static final String AUTH_DATA = "AUTH_DATA";
 
     protected String tgtDevice = "";
     protected String mechType = "";

@@ -12,7 +12,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
@@ -20,7 +19,6 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
  */
 public class StringAuthDialogFragment extends AuthDialogFragment {
 
-    public static final String AUTH_VICP = "AUTH_VICP";
     private static final String LOGTAG = "VicPDialogFrag";
 
 
@@ -50,7 +48,7 @@ public class StringAuthDialogFragment extends AuthDialogFragment {
         tv_info.setText(info);
 
         TextView tv = (TextView) view.findViewById(R.id.tv_authphrase_text);
-        String text = bundle.getString(AUTH_VICP);
+        String text = bundle.getString(AUTH_DATA);
         tv.setText(text);
         mechType = bundle.getString(AUTH_MECHTYPE);
         tgtDevice = bundle.getString(AUTH_TARGET_DVC);

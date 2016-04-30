@@ -20,13 +20,16 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.pitch.DTMF;
+import be.tarsos.dsp.pitch.Goertzel;
+
 /**
  * Created by kenny on 11.04.16.
  */
 public class Helper {
 
     private static final String LOGTAG = "Helper";
-
     public static boolean isPackageInstalled(String packagename, Context context) {
         PackageManager pm = context.getPackageManager();
         try {
@@ -232,6 +235,9 @@ public class Helper {
         }
         return res;
     }
+
+
+
 
     public String getBinaryStringFromArray(boolean[] ray) {
         String str = "";

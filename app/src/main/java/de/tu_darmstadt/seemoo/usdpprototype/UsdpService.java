@@ -46,7 +46,7 @@ import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ClientSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.ServerSocketHandler;
 import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.wifip2p.WiFiDirectBroadcastReceiver;
-import de.tu_darmstadt.seemoo.usdpprototype.secondarychannel.OOBData;
+import de.tu_darmstadt.seemoo.usdpprototype.misc.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 //wifip2p
@@ -539,10 +539,13 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
         int x = 0;
         for (RemoteDevice remDev : remDevices) {
             x++;
+            Toast.makeText(getApplicationContext(), remDev.getDevice().deviceAddress + " found", Toast.LENGTH_SHORT).show();
             if (remDev.getDevice().isGroupOwner()) {
+
                 return remDev.getMessMan();
             }
         }
+
         Toast.makeText(getApplicationContext(), "no GO found! (" + x + " devices found)", Toast.LENGTH_SHORT).show();
         return null;
     }
@@ -708,7 +711,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                     if (res.isSuccess()) {
                         Toast.makeText(getApplicationContext(), "Success!", Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(getApplicationContext(), "Pairing failed!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "Pairing failed! nodata", Toast.LENGTH_SHORT).show();
                     }
 
                     break;
@@ -730,12 +733,13 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         final String data = resWData.getData();
 
                         String val = String.valueOf(SecureAuthentication.getHashedIntVal(mymyDev.getSymKey()));
+                        Log.d("pairing rec", data);
                         if (val.equals(data)) {
                             connInfoWData.addAuthMech(resWData.getMech(), true);
                             Toast.makeText(getApplicationContext(), "Accepting data: " + val, Toast.LENGTH_SHORT).show();
                         } else {
                             connInfoWData.addAuthMech(resWData.getMech(), false);
-                            Toast.makeText(getApplicationContext(), "Pairing failed!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getApplicationContext(), "Pairing failed! " + data, Toast.LENGTH_SHORT).show();
                         }
                     }
                     break;
@@ -747,6 +751,7 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
                         switch (dev.status) {
                             case WifiP2pDevice.AVAILABLE:
                                 // if available, just connect
+                                // if device already in group, no direct connection possible. instead, pair.
                                 Toast.makeText(getApplicationContext(), "connecting to device", Toast.LENGTH_SHORT).show();
                                 if (dev != null) {
                                     WifiP2pConfig config = new WifiP2pConfig();
