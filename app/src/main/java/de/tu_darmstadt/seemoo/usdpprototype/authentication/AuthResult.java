@@ -2,6 +2,8 @@ package de.tu_darmstadt.seemoo.usdpprototype.authentication;
 
 /**
  * Created by kenny on 19.04.16.
+ *
+ * used as a bundle to handle authentication/pairing results
  */
 public class AuthResult {
     private String mech;

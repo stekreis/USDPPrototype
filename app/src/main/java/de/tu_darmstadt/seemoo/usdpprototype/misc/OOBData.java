@@ -4,12 +4,14 @@ import java.io.Serializable;
 
 /**
  * Created by kenny on 06.04.16.
+ *
+ * Bundle for OOB data, used to move OOBdata from Service to MainActivity for authentication
  */
 public class OOBData implements Serializable {
 
-    public static final String VIC_I = "VIC-I";
-    public static final String VIC_N = "VIC-N";
-    public static final String VIC_P = "VIC-P";
+    public static final String VIC_I = "VC-I";
+    public static final String VIC_N = "VC-N";
+    public static final String VIC_P = "VC-P";
     public static final String SiB = "SiB";
     public static final String SiBBlink = "SiBBlink";
     public static final String LaCDS = "LaCDS";

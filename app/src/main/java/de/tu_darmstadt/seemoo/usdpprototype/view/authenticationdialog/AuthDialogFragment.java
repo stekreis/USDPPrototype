@@ -42,6 +42,7 @@ public class AuthDialogFragment extends DialogFragment {
     public interface oobResultInterface {
         void oobResult(String targetDevice, String mech, boolean result);
         void oobResult(String targetDevice, String mech, String data);
+        void oobGenAuthResult(String tgtDevice, String mechType, String text);
     }
 
     public boolean isFragmentUIActive() {

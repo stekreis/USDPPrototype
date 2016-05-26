@@ -13,21 +13,23 @@ import android.widget.TextView;
 
 import de.tu_darmstadt.seemoo.usdpprototype.R;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.Swbu;
+import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 15.02.16.
  */
-public class InfoAuthDialogFragment extends AuthDialogFragment {
+public class SwbuAuthDialogFragment extends AuthDialogFragment implements Swbu.SwbuListener {
 
     public static final String AUTH_INFOONLY = "AUTH_INFO_ONLY";
     private static final String LOGTAG = "AuthInfoDialogFrag";
-    Swbu sif;
+    private Swbu swbu;
+    private TextView tv;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(LOGTAG, "created");
-        sif = new Swbu(getContext());
+        swbu = new Swbu(getContext(), this);
     }
 
     @Override
@@ -48,21 +50,27 @@ public class InfoAuthDialogFragment extends AuthDialogFragment {
         TextView tv_info = (TextView) view.findViewById(R.id.tv_authinfo_info);
         tv_info.setText(info);
 
-        TextView tv = (TextView) view.findViewById(R.id.tv_authinfo_explinfo);
+        tv = (TextView) view.findViewById(R.id.tv_authinfo_explinfo);
         String text = bundle.getString(AUTH_INFOONLY);
         tv.setText(text);
-
+        mechType = bundle.getString(AUTH_MECHTYPE);
+        tgtDevice = bundle.getString(AUTH_TARGET_DVC);
 
         builder.setView(view).setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
 
+                swbu.stopSensor();
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobGenAuthResult(tgtDevice, mechType, (String) tv.getText());
             }
         }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                InfoAuthDialogFragment.this.getDialog().cancel();
-                sif.stopSensor();
+                SwbuAuthDialogFragment.this.getDialog().cancel();
+                swbu.stopSensor();
+                UsdpMainActivity activity = (UsdpMainActivity) getActivity();
+                activity.oobGenAuthResult(tgtDevice, mechType, null);
             }
         });
         return builder.create();
@@ -71,6 +79,11 @@ public class InfoAuthDialogFragment extends AuthDialogFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        sif.stopSensor();
+        swbu.stopSensor();
+    }
+
+    @Override
+    public void sequenceCompleted(String seq) {
+        tv.setText(seq);
     }
 }

@@ -14,6 +14,8 @@ import java.util.ArrayList;
 
 /**
  * Created by kenny on 12.04.16.
+ *
+ * ArrayAdapter used for authentication mechanism list
  */
 public abstract class TwoLineArrayAdapter<T> extends ArrayAdapter<T> {
     private int mListItemLayoutResId;

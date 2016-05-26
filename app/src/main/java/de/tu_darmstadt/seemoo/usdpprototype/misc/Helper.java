@@ -26,10 +26,14 @@ import be.tarsos.dsp.pitch.Goertzel;
 
 /**
  * Created by kenny on 11.04.16.
+ * <p>
+ * methods used for special use cases (encryption, get MAC address, list transform, ...) or used by various classes
  */
 public class Helper {
 
     private static final String LOGTAG = "Helper";
+
+    // check if package/app is installed
     public static boolean isPackageInstalled(String packagename, Context context) {
         PackageManager pm = context.getPackageManager();
         try {
@@ -40,6 +44,7 @@ public class Helper {
         }
     }
 
+    // encrypt String with key using AEScrypt
     public static String encrypt(String text, String key) {
         String encryptedMsg = "";
         try {
@@ -50,6 +55,7 @@ public class Helper {
         return encryptedMsg;
     }
 
+    // get Date as CharSequence from timestamp in ms
     public static CharSequence getDate(long timeStamp) {
 
         try {
@@ -61,7 +67,7 @@ public class Helper {
         }
     }
 
-
+    //get Wi-Fi P2P MAC address (differs from regular Wi-Fi MAC address)
     //http://stackoverflow.com/a/29680825
     public static String getWFDMacAddress() {
         try {
@@ -92,35 +98,7 @@ public class Helper {
         return null;
     }
 
-    // http://stackoverflow.com/a/32948723
-    public static String getWifiMacAddress() {
-        try {
-            String interfaceName = "wlan0";
-            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-            for (NetworkInterface intf : interfaces) {
-                if (!intf.getName().equalsIgnoreCase(interfaceName)) {
-                    continue;
-                }
-
-                byte[] mac = intf.getHardwareAddress();
-                if (mac == null) {
-                    return "";
-                }
-
-                StringBuilder buf = new StringBuilder();
-                for (byte aMac : mac) {
-                    buf.append(String.format("%02X:", aMac));
-                }
-                if (buf.length() > 0) {
-                    buf.deleteCharAt(buf.length() - 1);
-                }
-                return buf.toString();
-            }
-        } catch (Exception ex) {
-        } // for now eat exceptions
-        return "";
-    }
-
+    // generates QR code using zxing library
     public static Bitmap generateQR(String input) {
         int width = 200;
         int height = 200;
@@ -151,6 +129,8 @@ public class Helper {
         return mBitmap;
     }
 
+
+    // extracts values from a list and puts them into array, starting with first item
     public static boolean[] getPrimitiveArrayMsbFront(ArrayList<Boolean> pattern) {
         boolean[] primitives = new boolean[pattern.size()];
         int index = 0;
@@ -160,6 +140,7 @@ public class Helper {
         return primitives;
     }
 
+    //separates digits from int and puts them subsequently in a list
     public static ArrayList<Integer> getDigitlistFromInt(int val) {
         ArrayList<Integer> digits = new ArrayList<Integer>();
         do {
@@ -169,6 +150,7 @@ public class Helper {
         return digits;
     }
 
+    // extracts values from a list and puts them into array, starting with last item
     public static boolean[] getPrimitiveArrayMsbBack(ArrayList<Boolean> pattern) {
         boolean[] primitives = new boolean[pattern.size()];
         int index = pattern.size() - 1;
@@ -178,6 +160,7 @@ public class Helper {
         return primitives;
     }
 
+    // puts gaps into a pattern
     public static boolean[] getSendingPattern(boolean[] data) {
         ArrayList<Boolean> pattern = new ArrayList<>();
         pattern.add(Boolean.FALSE);
@@ -192,6 +175,7 @@ public class Helper {
         return getPrimitiveArrayMsbFront(pattern);
     }
 
+    //transforms int value into binary array
     public static boolean[] getBinaryArray(int data, int bits) {
         boolean[] pattern = new boolean[bits];
         for (int i = 0; i < pattern.length; i++) {
@@ -200,7 +184,17 @@ public class Helper {
         return pattern;
     }
 
+    //transforms binary array to decimal int
+    public static int getInt(boolean[] data) {
+        int res = 0, l = data.length;
+        for (int i = 0; i < l; ++i) {
+            res = (res << 1) + (data[i] ? 1 : 0);
+        }
+        return res;
+    }
+
     /*
+    transforms hex string to decimal int
     http://introcs.cs.princeton.edu/java/31datatype/Hex2Decimal.java.html
      */
     public static int hex2decimal(String s) {
@@ -215,14 +209,7 @@ public class Helper {
         return val;
     }
 
-    public static int getInt(boolean[] data) {
-        int res = 0, l = data.length;
-        for (int i = 0; i < l; ++i) {
-            res = (res << 1) + (data[i] ? 1 : 0);
-        }
-        return res;
-    }
-
+    // detects highest positive value in int array
     public static char findHighestValPos(int[] val) {
         char res = 0;
         for (char pos = 0; pos < val.length; pos++) {
@@ -236,9 +223,7 @@ public class Helper {
         return res;
     }
 
-
-
-
+    //transform boolean array to String
     public String getBinaryStringFromArray(boolean[] ray) {
         String str = "";
         for (int pos = 0; pos < ray.length; pos++) {

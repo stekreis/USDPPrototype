@@ -9,8 +9,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.primarychannel.MessageManager;
 
 /**
  * Created by kenny on 13.04.16.
+ *
+ * represents a (remote) device with additional properties, address, report, etc.
  */
-public class RemoteDevice {
+public class UsdpDevice {
     private WifiP2pDevice device = null;
     private UsdpPacket packet = null;
     private MessageManager messMan = null;
@@ -18,14 +20,14 @@ public class RemoteDevice {
     private int symKey = -1;
     private ConnInfo connInfo = null;
 
-    public RemoteDevice(WifiP2pDevice device, UsdpPacket packet, MessageManager messMan, InetAddress inetAddress) {
+    public UsdpDevice(WifiP2pDevice device, UsdpPacket packet, MessageManager messMan, InetAddress inetAddress) {
         this.device = device;
         this.packet = packet;
         this.messMan = messMan;
         this.inetAddress = inetAddress;
     }
 
-    public RemoteDevice(WifiP2pDevice device) {
+    public UsdpDevice(WifiP2pDevice device) {
         this.device = device;
     }
 

@@ -11,6 +11,11 @@ import java.net.Socket;
 
 import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 
+
+/**
+ *
+ * based on https://android.googlesource.com/platform/development/+/master/samples/WiFiDirectServiceDiscovery/src/com/example/android/wifidirect/discovery/ClientSocketHandler.java
+ */
 public class ClientSocketHandler extends Thread {
 
     private static final String LOGTAG = "ClientSocketHandler";

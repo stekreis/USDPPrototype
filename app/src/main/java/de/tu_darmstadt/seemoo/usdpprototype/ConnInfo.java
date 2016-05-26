@@ -8,6 +8,8 @@ import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 
 /**
  * Created by kenny on 19.04.16.
+ *
+ * Report for a single connection
  */
 public class ConnInfo {
 
@@ -18,6 +20,7 @@ public class ConnInfo {
 
     }
 
+    // for every pairing, regardless of its outcome, one entry is added. Currently as a simple String
     public void addAuthMech(String authmech, boolean success) {
         //usedMechs.add(AuthMechManager.getSingleMechByName(authmech));
         AuthMechanism mech = AuthMechManager.getSingleMechByName(authmech);
@@ -26,7 +29,7 @@ public class ConnInfo {
         String timeStampDate = (String) Helper.getDate(timestamp);
 
 
-        String res = timeStampDate +": "+ mech.getShortName() + " (" + mech.getSecPoints() + " SecPoints)";
+        String res = timeStampDate +": "+ mech.getShortName() + " (" + mech.getValuation() + " mechVal)";
         if (success) {
             res += " (OK)";
         } else {

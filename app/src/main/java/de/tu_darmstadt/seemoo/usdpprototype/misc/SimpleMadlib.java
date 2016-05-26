@@ -13,6 +13,8 @@ import java.util.ListIterator;
 
 /**
  * Created by kenny on 29.03.16.
+ *
+ * substitutes MadLib, uses simple wordlist
  */
 public class SimpleMadlib {
 
@@ -34,6 +36,8 @@ public class SimpleMadlib {
         return retVal.trim();
     }
 
+
+    // read wordlist file
     public boolean parseWordlist(Context context) {
         AssetManager am = context.getAssets();
         try {

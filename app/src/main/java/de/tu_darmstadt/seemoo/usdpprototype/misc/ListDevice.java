@@ -4,6 +4,8 @@ import android.net.wifi.p2p.WifiP2pDevice;
 
 /**
  * Created by kenny on 12.04.16.
+ *
+ * represents a Device as seen in the ListView in USDPMainActivity
  */
 public class ListDevice {
     private String address = "";

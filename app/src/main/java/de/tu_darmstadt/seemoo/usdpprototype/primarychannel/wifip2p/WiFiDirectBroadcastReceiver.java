@@ -14,6 +14,10 @@ import de.tu_darmstadt.seemoo.usdpprototype.view.UsdpMainActivity;
 
 /**
  * Created by kenny on 26.01.16.
+ *
+ * reacts on Wi-Fi P2P broadcasts/actions
+ *
+ * based on https://developer.android.com/guide/topics/connectivity/wifip2p.html
  */
 public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
 

@@ -4,20 +4,22 @@ import java.util.ArrayList;
 
 /**
  * Created by kenny on 09.04.16.
+ *
+ * Provides properties for a single authentication mechanism
  */
 public class AuthMechanism implements Comparable<AuthMechanism> {
     private String shortName;
     private String longName;
-    private String authUsed;
-    private int secPoints = 0;
+    private String mechDesc;
+    private int mechVal = 0;
     private ArrayList<String> reqCapSend = new ArrayList<String>();
     private ArrayList<String> reqCapRec = new ArrayList<String>();
 
-    public AuthMechanism(String shortName, String longName, String authUsed, int secPoints, ArrayList<String> reqCapSend, ArrayList<String> reqCapRec) {
+    public AuthMechanism(String shortName, String longName, String mechDesc, int valuation, ArrayList<String> reqCapSend, ArrayList<String> reqCapRec) {
         this.shortName = shortName;
         this.longName = longName;
-        this.authUsed = authUsed;
-        this.secPoints = secPoints;
+        this.mechDesc = mechDesc;
+        this.mechVal = valuation;
         this.reqCapSend = reqCapSend;
         this.reqCapRec = reqCapRec;
     }
@@ -34,17 +36,19 @@ public class AuthMechanism implements Comparable<AuthMechanism> {
         return reqCapRec;
     }
 
+
+    //Compare mechanisms by their valuation
     @Override
     public int compareTo(AuthMechanism another) {
-        if (secPoints > another.getSecPoints()) {
+        if (mechVal > another.getValuation()) {
             return -1;
-        } else if (secPoints < another.getSecPoints()) {
+        } else if (mechVal < another.getValuation()) {
             return 1;
         }
         return 0;
     }
 
-    public int getSecPoints() {
-        return secPoints;
+    public int getValuation() {
+        return mechVal;
     }
 }

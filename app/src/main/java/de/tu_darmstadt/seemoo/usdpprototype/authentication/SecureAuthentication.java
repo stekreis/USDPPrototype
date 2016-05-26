@@ -12,6 +12,11 @@ import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
 
 /**
  * Created by kenny on 08.02.16.
+ *
+ * Diffie Hellman key generator
+ *
+ * initially based on http://www.java2s.com/Tutorial/Java/0490__Security/ImplementingtheDiffieHellmankeyexchange.htm
+ *
  */
 public class SecureAuthentication {
 
@@ -42,6 +47,7 @@ public class SecureAuthentication {
         return hashedkey;
     }
 
+    // generate local public and private key
     public void init() {
         if (bitlength > BITLENGTHMAX) {
             bitlength = BITLENGTHMAX;
@@ -56,6 +62,8 @@ public class SecureAuthentication {
         Log.d(LOGTAG, "pub: " + pub.toString());
     }
 
+
+    // generates common secret based on remote public key and local private key
     public int generateKey(int othrPublicVal) {
         BigInteger pVal = BigInteger.valueOf(pValue);
         BigInteger otherPublicVal = BigInteger.valueOf(othrPublicVal);

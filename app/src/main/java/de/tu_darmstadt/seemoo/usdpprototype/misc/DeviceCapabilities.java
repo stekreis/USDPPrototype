@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 /**
  * Created by kenny on 08.04.16.
+ *
+ * stores and handles the capabilities (/features) of a device
  */
 public class DeviceCapabilities {
     public final static String[] capTitles = {"Camera", "Display", "Speaker", "Microphone", "Vibration", "LED", "Accelerometer", "NFC"};

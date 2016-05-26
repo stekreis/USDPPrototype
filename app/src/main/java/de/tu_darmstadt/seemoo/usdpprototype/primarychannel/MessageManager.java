@@ -14,6 +14,8 @@ import de.tu_darmstadt.seemoo.usdpprototype.UsdpService;
 /**
  * Handles reading and writing of messages with socket buffers. Uses a Handler
  * to post messages to Service.
+ *
+ * based on https://android.googlesource.com/platform/development/+/master/samples/WiFiDirectServiceDiscovery/src/com/example/android/wifidirect/discovery/ChatManager.java
  */
 public class MessageManager implements Runnable {
 
@@ -79,6 +81,8 @@ public class MessageManager implements Runnable {
         }
     }
 
+
+    // send data to remote device
     public void write(byte[] buffer) {
         try {
             outStream.write(buffer);

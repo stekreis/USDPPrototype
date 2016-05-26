@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * The implementation of a ServerSocket handler. This is used by the wifi p2p
  * group owner.
+ *
+ * based on https://android.googlesource.com/platform/development/+/master/samples/WiFiDirectServiceDiscovery/src/com/example/android/wifidirect/discovery/GroupOwnerSocketHandler.java
  */
 public class ServerSocketHandler extends Thread {
 

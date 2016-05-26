@@ -12,9 +12,12 @@ import java.util.ListIterator;
 
 /**
  * Created by kenny on 29.03.16.
+ * <p>
+ * Shake Well Before Use class, handles accelerometer data and extracts few discrete values
  */
 public class Swbu implements SensorEventListener {
 
+    private final static int VAL_AMOUNT = 7;
     private final static int POS_THRESH = 1;
     private final static int NEG_THRESH = -1;
     private final String LOGTAG = "Swbu";
@@ -27,10 +30,12 @@ public class Swbu implements SensorEventListener {
 
     private float[] accval = new float[5];
     private int accPos = 0;
+    private SwbuListener swbuListener;
 
-    public Swbu(Context ctx) {
+    public Swbu(Context ctx, SwbuListener swbuListener) {
         sensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
-        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_FASTEST);
+        this.swbuListener = swbuListener;
         tempList = new ArrayList<>();
         initPosPack();
         initNegPack();
@@ -55,35 +60,12 @@ public class Swbu implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            float ax = event.values[0];
-            float ay = event.values[1];
-            float az = event.values[2];
-
-
-            //Log.d(LOGTAG, ax + "/" + ay + "/" + az);
-            float totalAcc = Math.abs(ax) + Math.abs(ay) + Math.abs(az);
-            Log.d(LOGTAG, "" + totalAcc);
-
-            accval[accPos++] = totalAcc;
-            if (accPos >= accval.length) {
-                float max = 0;
-                for (int pos = 0; pos < accval.length; pos++) {
-                    if (accval[pos] > max) {
-                        max = accval[pos];
-                    }
-                }
-                Log.d(LOGTAG, "MAX: " + max);
-                accPos = 0;
-                accval = new float[accval.length];
-            }
-
-        }
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             float val = event.values[0];
-            /*long curTime = event.timestamp;*/
             long curTime = System.currentTimeMillis();
-            //Log.d("XVAL", val + "");
+
+            //general procedure: only positive values higher than some positive threshold are counted as maximum positive.
+            // After negative threshold was exceeded, last positive max is fix. The same procedure runs vice versa.
 
             if (wasPositive) {
                 //is current value higher than previous value?
@@ -110,58 +92,48 @@ public class Swbu implements SensorEventListener {
                 }
             }
 
-            if (tempList.size() >= 7) {
-                /*printMe();*/
+            if (tempList.size() >= VAL_AMOUNT) {
                 calcShakeVals();
                 tempList.clear();
 
             }
-
-            //
-
-
-            //Log.d("YVAL",event.values[0] + "");
-            //Log.d("ZVAL",event.values[0] + "");
         }
     }
 
-    private void calcShakeVals(){
-        long timeDiff =0;
+    // merges time and acceleration difference between subsequent max values to digits
+    private void calcShakeVals() {
+        long timeDiff = 0;
         float valDiff = 0;
         ArrayList<Integer> vals = new ArrayList<>();
         ListIterator<SwbuPacket> iter = tempList.listIterator();
         SwbuPacket last = null;
-        if(iter.hasNext()){
+        if (iter.hasNext()) {
             last = iter.next();
         }
-        while(iter.hasNext()){
+        while (iter.hasNext()) {
             SwbuPacket curr = iter.next();
             timeDiff = curr.getTimeStamp() - last.timeStamp;
             valDiff = curr.getVal() - last.getVal();
-            int x = Math.abs(Math.round((timeDiff*valDiff)/1000));
-            if(x>10){
-                x=9;
-            }else if(x<0){
-                x=0;
+            int x = Math.abs(Math.round((timeDiff * valDiff) / 1000));
+            if (x > 10) {
+                x = 9;
+            } else if (x < 0) {
+                x = 0;
             }
             vals.add(x);
             last = curr;
         }
-        String str = "";
+        String ret = "";
         for (Integer intVal : vals) {
-              str += String.valueOf(intVal) + "\n";
+            ret += String.valueOf(intVal);
         }
-        Log.d("TESTACC222", str);
+        swbuListener.sequenceCompleted(ret);
     }
 
-
-    private void printMe() {
-        String str = "";
-        for (SwbuPacket pack : tempList) {
-            str += pack.getTimeStamp() + "//" + pack.getVal() + "\n";
-        }
-        Log.d("TESTACC", str);
+    public interface SwbuListener {
+        void sequenceCompleted(String seq);
     }
+
 
     private class SwbuPacket {
         private long timeStamp;
@@ -172,16 +144,9 @@ public class Swbu implements SensorEventListener {
             this.val = val;
         }
 
-        // Copy Constructor
-        public SwbuPacket(SwbuPacket packet) {
-            this.timeStamp = packet.getTimeStamp();
-            this.val = packet.getTimeStamp();
-        }
-
         public void set(long timeStamp, float val) {
             this.timeStamp = timeStamp;
             this.val = val;
-            Log.d("XVAL", val + "");
         }
 
         public long getTimeStamp() {

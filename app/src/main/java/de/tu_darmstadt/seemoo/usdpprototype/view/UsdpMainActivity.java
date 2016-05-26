@@ -54,14 +54,13 @@ import de.tu_darmstadt.seemoo.usdpprototype.authentication.AuthResult;
 import de.tu_darmstadt.seemoo.usdpprototype.authentication.SecureAuthentication;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.DeviceCapabilities;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.Helper;
-import de.tu_darmstadt.seemoo.usdpprototype.misc.Swbu;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.TargetMsg;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.ListDevice;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.OOBData;
 import de.tu_darmstadt.seemoo.usdpprototype.misc.SimpleMadlib;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.AuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.HapaRecAuthDialogFragment;
-import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.InfoAuthDialogFragment;
+import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.SwbuAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_BtnAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BEDA_VibAuthDialogFragment;
 import de.tu_darmstadt.seemoo.usdpprototype.view.authenticationdialog.BarSibAuthDialogFragment;
@@ -174,7 +173,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         authDialog = new CamAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "SibBlink");
-        bundle.putString(AuthDialogFragment.AUTH_INFO, "use camera on other device to capture blinking sequence");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "Use camera on other device to capture blinking sequence");
         bundle.putString(CamAuthDialogFragment.AUTH_PATTERN, phrase);
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
@@ -188,12 +187,12 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_DATA, number);
         bundle.putString(AuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_N);
-        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-N: compare numbers");
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VC-N: compare numbers");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with number on other device");
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
-            authDialog.show(getSupportFragmentManager(), "authvicn");
+            authDialog.show(getSupportFragmentManager(), "authvcn");
         }
     }
 
@@ -202,12 +201,12 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_DATA, phrase);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.VIC_P);
-        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-P: compare phrases");
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VC-P: compare phrases");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with phrase on other device");
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
-            authDialog.show(getSupportFragmentManager(), "authvicp");
+            authDialog.show(getSupportFragmentManager(), "authvcp");
         }
     }
 
@@ -244,7 +243,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putString(AuthDialogFragment.AUTH_DATA, phrase);
         bundle.putString(AuthDialogFragment.AUTH_TITLE, title);
         bundle.putString(AuthDialogFragment.AUTH_INFO, info);
-        bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.LaCDS);
+        bundle.putString(AuthDialogFragment.AUTH_MECHTYPE, OOBData.LaCDS);
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
@@ -253,10 +252,11 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
     private void showAuthInfoDialogFragment(String info, String tDevice) {
-        authDialog = new InfoAuthDialogFragment();
+        authDialog = new SwbuAuthDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putString(InfoAuthDialogFragment.AUTH_INFOONLY, info);
+        bundle.putString(SwbuAuthDialogFragment.AUTH_INFOONLY, info);
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
+        bundle.putString(AuthDialogFragment.AUTH_MECHTYPE, OOBData.SWBU);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
             authDialog.show(getSupportFragmentManager(), "tzefuginfo");
@@ -270,7 +270,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         Bundle bundle = new Bundle();
         int[] pixels = new int[bmp.getWidth() * bmp.getHeight()];
         bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VIC-I: compare images");
+        bundle.putString(AuthDialogFragment.AUTH_TITLE, "VC-I: compare images");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "compare with image on other device");
         bundle.putIntArray(ImgAuthDialogFragment.IMG_IMAGE, pixels);
         bundle.putInt(ImgAuthDialogFragment.IMG_HEIGHT, bmp.getHeight());
@@ -279,7 +279,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
         if (!authDialog.isFragmentUIActive()) {
             authDialog.setArguments(bundle);
-            authDialog.show(getSupportFragmentManager(), "authvici");
+            authDialog.show(getSupportFragmentManager(), "authvci");
         }
     }
 
@@ -301,7 +301,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         authDialog = new BEDA_VibAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA Vibrate-Button");
-        bundle.putString(AuthDialogFragment.AUTH_EXPLINFO, "press button on other device when vibrating");
+        bundle.putString(AuthDialogFragment.AUTH_EXPLINFO, "press button on other device simultaneously to vibration");
         bundle.putString(AuthDialogFragment.AUTH_INFO, "press OK when finished");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
@@ -315,7 +315,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         authDialog = new LEDBlinkAuthDialogFragment();
         Bundle bundle = new Bundle();
         bundle.putString(AuthDialogFragment.AUTH_TITLE, "BEDA LED-Button");
-        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device as long as LED is bright");
+        bundle.putString(AuthDialogFragment.AUTH_INFO, "press button on other device simultaneously when LED is bright");
         bundle.putBooleanArray(BarSibAuthDialogFragment.AUTH_PATTERN, pattern);
         bundle.putString(StringAuthDialogFragment.AUTH_MECHTYPE, OOBData.BEDA_LB);
         bundle.putString(AuthDialogFragment.AUTH_TARGET_DVC, tDevice);
@@ -402,12 +402,6 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                         dialog.show();
 
                         return true;
-                    case R.id.mnu_get_report:
-                        showShortToast("TBD");
-                        break;
-                    case R.id.mnu_test:
-
-                        break;
                     case R.id.mnu_wifi_settings:
                         startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
                         break;
@@ -417,7 +411,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         });
 
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        /*FloatingActionButton  = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -453,10 +447,10 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 }
 
                 Log.d("GODRESULT", res);
-                dtmfCharacters.clear();*/
+                dtmfCharacters.clear();
             }
         });
-
+*/
         // UI
         Button btn_discover = (Button) findViewById(R.id.btn_discover);
         btn_discover.setOnClickListener(new View.OnClickListener() {
@@ -635,14 +629,17 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
     private void setStateInfo(WifiP2pDevice dev) {
-        String devName = dev.deviceName;
-        if (dev.isGroupOwner()) {
-            devName += " (GO)";
+        if (dev != null) {
+            String devName = dev.deviceName;
+            if (dev.isGroupOwner()) {
+                devName += " (GO)";
+            }
+            String devAddress = dev.deviceAddress;
+            tv_status.setText("Device info:\n" + devName
+                    + " (" + devAddress + ")");
+        }else{
+            Log.d(LOGTAG, "Device was null!");
         }
-        String devAddress = dev.deviceAddress;
-        tv_status.setText("Device info:\n" + devName
-                + " (" + devAddress + ")");
-
     }
 
     private void playHapaSequence(final ArrayList<Integer> digits) {
@@ -835,7 +832,6 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                         Intent intent = new Intent("com.google.zxing.client.android.SCAN");
                         intent.putExtra("com.google.zxing.client.android.SCAN.SCAN_MODE", "QR_CODE_MODE");
                         startActivityForResult(intent, 0);
-                        // TODO tDevice address gets lost
                     } else {
                         // TODO goto market, install. check this at the start (kind of init app generally)
                         Toast.makeText(this, "install zxing Barcode Scanner", Toast.LENGTH_SHORT).show();
@@ -901,9 +897,9 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 // TODO not using SAS protocol
                 if (oobData.isSendingDevice()) {
                     //button
-                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT, tDevice);
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times simultaneously on both devices", OOBData.BEDA_BTBT, tDevice);
                 } else {
-                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times but equal on both devices", OOBData.BEDA_BTBT, tDevice);
+                    showBEDARecBtnDialogFragment("BEDA Button Button", "press button several random times simultaneously on both devices", OOBData.BEDA_BTBT, tDevice);
                 }
                 break;
             case OOBData.HAPADEP:
@@ -942,12 +938,12 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             case OOBData.SWBU:
                 if (oobData.isSendingDevice()) {
                     //accel
-                    Swbu swbu = new Swbu(getApplication());
+                    //Swbu swbu = new Swbu(getApplication());
 
                     showAuthInfoDialogFragment("shakeshake", tDevice);
                 } else {
                     //accel
-                    Swbu swbu = new Swbu(getApplication());
+                    //Swbu swbu = new Swbu(getApplication());
                     showAuthInfoDialogFragment("shakeshake", tDevice);
                 }
                 break;
@@ -976,6 +972,13 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     public void oobResult(String tDevice, String mech, String data) {
         AuthResult res = new AuthResult(mech, data);
         sendMsgtoService(Message.obtain(null, UsdpService.MSG_ACCEPT_AUTH_WDATA, new TargetMsg(tDevice, res)));
+    }
+
+
+    @Override
+    public void oobGenAuthResult(String tDevice, String mech, String data) {
+        AuthResult res = new AuthResult(mech, data);
+        sendMsgtoService(Message.obtain(null, UsdpService.MSG_GEN_AUTH_DATA, new TargetMsg(tDevice, res)));
     }
 
     // TODO move to its own file?

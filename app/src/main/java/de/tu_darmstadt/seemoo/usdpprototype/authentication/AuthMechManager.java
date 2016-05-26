@@ -27,6 +27,7 @@ public class AuthMechManager {
 
     }
 
+    // returns an authentication mechanism by its short name
     public static AuthMechanism getSingleMechByName(String name) {
         for (int ipos = 0; ipos < authmechs.length; ipos++) {
             if (authmechs[ipos].getShortName().equals(name)) {
@@ -63,12 +64,13 @@ public class AuthMechManager {
         authmechs = authMechList.toArray(new AuthMechanism[authMechList.size()]);
     }
 
+    // reads JSON file content
     public ArrayList<AuthMechanism> readMessage(JsonReader reader) throws IOException {
         ArrayList<AuthMechanism> authMechList = new ArrayList<AuthMechanism>();
         String shortName = null;
         String longName = null;
-        String usedAuth = null;
-        int secPoints = 0;
+        String mechDesc = null;
+        int mechVal = 0;
         ArrayList<String> reqCapSend = new ArrayList<String>();
         ArrayList<String> reqCapRec = new ArrayList<String>();
 
@@ -80,10 +82,10 @@ public class AuthMechManager {
                 name = reader.nextName();
                 if (name.equals("name")) {
                     longName = reader.nextString();
-                } else if (name.equals("usedAuth")) {
-                    usedAuth = reader.nextString();
-                } else if (name.equals("secPoints")) {
-                    secPoints = reader.nextInt();
+                } else if (name.equals("mechDesc")) {
+                    mechDesc = reader.nextString();
+                } else if (name.equals("mechVal")) {
+                    mechVal = reader.nextInt();
                 } else if (name.equals("reqCapSend") && reader.peek() != JsonToken.NULL) {
                     reqCapSend = readDevCaps(reader);
                 } else if (name.equals("reqCapRec") && reader.peek() != JsonToken.NULL) {
@@ -93,7 +95,7 @@ public class AuthMechManager {
                 }
             }
             reader.endObject();
-            authMechList.add(new AuthMechanism(shortName, longName, usedAuth, secPoints, reqCapSend, reqCapRec));
+            authMechList.add(new AuthMechanism(shortName, longName, mechDesc, mechVal, reqCapSend, reqCapRec));
         }
         reader.endObject();
         return authMechList;
@@ -114,6 +116,8 @@ public class AuthMechManager {
 
     }
 
+
+    // checks whether sending counterparts for receiving capabilities are available
     private boolean fulfillsReq(ArrayList<String> req, String[] devCaps) {
         ListIterator<String> authReqCaps = req.listIterator();
         boolean found = false;
@@ -147,6 +151,7 @@ public class AuthMechManager {
         return null;
     }
 
+    // returns all mechanisms supported by this device as receiver
     public String[] getSupportedRecMechs(String[] devCaps) {
         if (authmechs != null) {
             ArrayList<String> supMechs = new ArrayList<String>();
@@ -160,6 +165,7 @@ public class AuthMechManager {
         return null;
     }
 
+    // returns all mechanisms supported by this device as sender
     public String[] getSupportedSendMechs(String[] devCaps) {
         if (authmechs != null) {
             ArrayList<String> supMechs = new ArrayList<String>();
@@ -173,6 +179,7 @@ public class AuthMechManager {
         return null;
     }
 
+    // detects compatible sending/receiving mechanisms
     public void findComp(HashSet<String> res, String[] first, String[] second) {
         for (int firstPos = 0; firstPos < first.length; firstPos++) {
             for (int secPos = 0; secPos < second.length; secPos++) {
@@ -184,6 +191,7 @@ public class AuthMechManager {
         }
     }
 
+    // returns a subset of AuthMechanisms based on their name
     public ArrayList<AuthMechanism> getMechsByNames(String[] names) {
         ArrayList<AuthMechanism> res = new ArrayList<>();
         for (int pos = 0; pos < names.length; pos++) {
@@ -196,11 +204,10 @@ public class AuthMechManager {
         return res;
     }
 
+    // sorts a list of authentication mechanisms by their valuation
     public AuthMechanism[] sortAuthMechsBySec(String[] authmechs) {
-        String[] res = new String[authmechs.length];
         ArrayList<AuthMechanism> mechs = getMechsByNames(authmechs);
         Collections.sort(mechs);
-
         return mechs.toArray(new AuthMechanism[mechs.size()]);
     }
 

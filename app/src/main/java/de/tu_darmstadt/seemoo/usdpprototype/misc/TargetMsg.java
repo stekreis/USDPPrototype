@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 /**
  * Created by kenny on 23.04.16.
+ *
+ * Acts as a Message to handle communication via other devices, i.e. Group Owner
  */
 public class TargetMsg implements Serializable{
     private static final long serialVersionUID = 601696025421177797L;

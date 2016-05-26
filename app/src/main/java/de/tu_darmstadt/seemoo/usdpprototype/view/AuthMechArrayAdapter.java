@@ -39,9 +39,9 @@ public class AuthMechArrayAdapter extends ArrayAdapter<AuthMechanism> {
             row = inflater.inflate(layoutResourceId, parent, false);
 
             holder = new MechHolder();
-            holder.imgIcon = (ImageView)row.findViewById(R.id.iv_authmechrow);
+            //holder.imgIcon = (ImageView)row.findViewById(R.id.iv_authmechrow);
             holder.txtTitle = (TextView)row.findViewById(R.id.tv_mechname);
-            holder.secPoints = (TextView)row.findViewById(R.id.tv_secpoints);
+            holder.mechVal = (TextView)row.findViewById(R.id.tv_mechval);
 
             row.setTag(holder);
         }
@@ -52,8 +52,8 @@ public class AuthMechArrayAdapter extends ArrayAdapter<AuthMechanism> {
 
         AuthMechanism mech = data[position];
         holder.txtTitle.setText(mech.getShortName());
-        holder.secPoints.setText(mech.getSecPoints() + " SecPoints");
-        holder.imgIcon.setImageResource(R.drawable.mech_sib);
+        holder.mechVal.setText(mech.getValuation() + " mechVal");
+        //holder.imgIcon.setImageResource(R.drawable.mech_sib);
 
         return row;
     }
@@ -62,6 +62,6 @@ public class AuthMechArrayAdapter extends ArrayAdapter<AuthMechanism> {
     {
         ImageView imgIcon;
         TextView txtTitle;
-        TextView secPoints;
+        TextView mechVal;
     }
 }
