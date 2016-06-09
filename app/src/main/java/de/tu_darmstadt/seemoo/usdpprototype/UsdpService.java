@@ -868,11 +868,13 @@ public class UsdpService extends Service implements WifiP2pManager.ConnectionInf
 
                     break;
                 case MSG_PAIRSEC:
+                    // start secure pairing
                     final String pairAddr = obj.toString();
                     UsdpDevice myPairDev = remoteDevices.get(pairAddr);
                     pairSecure(myPairDev);
                     break;
                 case MSG_SEND_ENCRYPTED:
+                    // send encrypted message
                     TargetMsg iChatMsg = (TargetMsg) msg.obj;
                     String text = (String) iChatMsg.getObj();
                     UsdpDevice usdpDevice = remoteDevices.get(iChatMsg.getTargetAddress());

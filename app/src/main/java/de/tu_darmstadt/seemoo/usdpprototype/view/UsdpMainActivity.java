@@ -169,6 +169,12 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         init();
     }
 
+    /*
+    following: mechanism dialog creation
+    TODO move mechanism handling to a dedicated class
+
+     */
+
     private void showAuthCamDialogFragment(String phrase, String tDevice) {
         authDialog = new CamAuthDialogFragment();
         Bundle bundle = new Bundle();
@@ -357,6 +363,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
     }
 
 
+    // initialization of GUI components
     @SuppressWarnings("deprecation")
     private void initViewComponents() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -521,6 +528,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         });*/
     }
 
+    // device list item menu - items
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v,
                                     ContextMenu.ContextMenuInfo menuInfo) {
@@ -541,12 +549,6 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             }
         }
 
-
-/*
-        menu.add(0, v.getId(), 0, "send Message");
-        menu.add(0, v.getId(), 0, "get report");
-        menu.add(0, v.getId(), 0, "Disconnect");
-*/
     }
 
     private void showShortToast(String text) {
@@ -557,6 +559,8 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         Toast.makeText(UsdpMainActivity.this, text, Toast.LENGTH_LONG).show();
     }
 
+
+    // device list item menu - actions
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
@@ -564,6 +568,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
         final String selectedDeviceMac = ((TextView) info.targetView.findViewById(android.R.id.text2)).getText().toString();
         switch (item.getItemId()) {
             case CTXM_SENDMSG:
+                // message dialog
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(UsdpMainActivity.this);
                 LayoutInflater inflater = UsdpMainActivity.this.getLayoutInflater();
                 final View dialogView = inflater.inflate(R.layout.dialog_message, null);
@@ -596,11 +601,11 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
                 return true;
             case CTXM_DISCONN:
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_DISCONNECT, selectedDeviceMac));
-                showShortToast("disconn");
+                showShortToast("Disconnecting");
                 return true;
             case CTXM_CNCLINV:
                 sendMsgtoService(Message.obtain(null, UsdpService.MSG_ABRT_CONN, selectedDeviceMac));
-                showShortToast("cncl invit");
+                showShortToast("Canceling Invitation");
                 return true;
 
             default:
@@ -637,7 +642,7 @@ public class UsdpMainActivity extends AppCompatActivity implements AuthDialogFra
             String devAddress = dev.deviceAddress;
             tv_status.setText("Device info:\n" + devName
                     + " (" + devAddress + ")");
-        }else{
+        } else {
             Log.d(LOGTAG, "Device was null!");
         }
     }
